@@ -5,8 +5,8 @@
     "email": "gplusit@gmail.com"
   },
   "metadata": {
-    "description": "Marketplace for plugins that bring external AI models to Claude Code. First plugin: GLM (z.ai's GLM-5.1).",
-    "version": "0.5.0"
+    "description": "Marketplace for plugins that bring external AI models to Claude Code. Current plugins: GLM (z.ai's GLM-5.1), Gemini (Google's Gemini).",
+    "version": "0.6.0"
   },
   "plugins": [
     {
@@ -14,6 +14,16 @@
       "source": "./plugins/glm",
       "description": "Delegate tasks to z.ai's GLM-5.1 model via claude -p subprocess.",
       "version": "0.5.0",
+      "author": {
+        "name": "yhzion",
+        "email": "gplusit@gmail.com"
+      }
+    },
+    {
+      "name": "gemini",
+      "source": "./plugins/gemini",
+      "description": "Delegate tasks to Google's Gemini model via gemini CLI subprocess.",
+      "version": "0.1.0",
       "author": {
         "name": "yhzion",
         "email": "gplusit@gmail.com"

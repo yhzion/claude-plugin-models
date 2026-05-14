@@ -2,6 +2,41 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.0] — 2026-05-14
+
+### Added
+- **`gemini` 플러그인 MVP (Phase 2)** — `plugins/gemini/` 신규.
+  - `plugins/gemini/.claude-plugin/plugin.json` (v0.1.0).
+  - `plugins/gemini/agents/{gemini,gemini-rescue}.md` — 위임 / 잡 라이프사이클
+    트래킹 두 가지 에이전트.
+  - `plugins/gemini/commands/{setup,rescue,review,status,result,cancel}.md` —
+    슬래시 커맨드 6종.
+  - `plugins/gemini/scripts/gemini-companion.mjs` — CLI 오케스트레이터.
+    `gemini -p` 서브프로세스 호출 + 잡 트래킹.
+  - `plugins/gemini/scripts/lib/{state,gemini-runner,git}.mjs` — 잡 상태
+    원자적 쓰기 / `detached: true` spawn + process-group cancel / git diff
+    헬퍼.
+- `plugins/gemini/prompts/review.md`, `schemas/review-output.schema.json` —
+  `/gemini:review` 템플릿과 출력 구조 스키마 (GLM 동일 구조 미러).
+- `plugins/gemini/skills/{gemini-cli-runtime,gemini-result-handling,gemini-prompting}/SKILL.md`
+  — Gemini 전용 스킬 3종. OAuth/`GEMINI_API_KEY` 인증, exit code 41
+  (unauthenticated) 처리, `gemini-3.1-pro-preview` vs `gemini-2.5-flash`
+  모델 선택 가이드 포함.
+- `.claude-plugin/marketplace.json`: `gemini` 엔트리 추가, 메타데이터
+  버전 `0.5.0` → `0.6.0`, description에 Gemini 명시.
+
+### Notes
+- `gemini` CLI는 SIGTERM/SIGINT 시그널을 자체적으로 무시(Node CLI without
+  signal handlers). 백그라운드 잡 cancel은 `spawn(..., { detached: true })`로
+  새 process group을 만든 뒤 `process.kill(-pid, ...)`로 그룹 전체 SIGTERM,
+  실패 시 SIGKILL escalation. 이 메커니즘이 `lib/gemini-runner.mjs`의
+  `cancelGeminiProcess()`에 캡슐화돼 있음.
+- GLM과 달리 settings 파일을 작성하지 *않음*. `gemini` CLI가 자체 OAuth
+  (`~/.gemini/oauth_creds.json`) 또는 `GEMINI_API_KEY` env로 관리.
+  `/gemini:setup`은 readiness checker 전용.
+- `glm` 플러그인 버전(`plugin.json`)은 `0.5.0` 그대로 유지. 본 릴리스는
+  GLM 코드/스킬 변경 없음 — 마켓플레이스 메타데이터만 `0.6.0`.
+
 ## [0.5.0] — 2026-05-14
 
 ### Changed
