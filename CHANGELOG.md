@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] — 2026-05-14
+
+### Changed
+- `README.md` restructured to follow the convergent Claude Code marketplace
+  README pattern, validated against 15+ cached plugin READMEs (codex,
+  sentry, hookify, slack, vercel, pinecone, telegram, etc.). New section
+  ordering matches user decision flow: header → overview → features →
+  requirements → installation → quick start → usage → skills →
+  troubleshooting → structure → tests → roadmap → license.
+
+### Added
+- **Requirements** section (Claude Code, Node.js 18+, z.ai plan, git).
+- **Quick Start** section — three-step minimal verification path
+  (`/glm:setup` → smallest GLM round-trip → meaningful first use).
+- **Per-command Usage sections** — each of the 6 slash commands gets a
+  dedicated subsection with synopsis, flags, and runnable examples
+  (matching codex's `/codex:review` / `/codex:adversarial-review` /
+  `/codex:rescue` pattern).
+- Installation now includes a numbered 4-step recipe (marketplace add →
+  install → restart → verify with `/help` and `/agents`).
+- New troubleshooting row: "슬래시 커맨드가 안 보임" → restart + `/help`.
+
+### Notes
+- No code changes. `plugin.json` and `marketplace.json` version bumped
+  to `0.5.0` to reflect the user-facing surface change (intentional
+  minor bump under the pre-1.0 convention).
+
 ## [0.4.0] — 2026-05-14
 
 ### Added
