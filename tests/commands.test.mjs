@@ -19,9 +19,9 @@ function parseFrontmatter(md) {
   return { frontmatter: fm, body: match[2] };
 }
 
-const EXPECTED = ['setup', 'rescue', 'status', 'result', 'cancel'];
+const EXPECTED = ['setup', 'rescue', 'review', 'status', 'result', 'cancel'];
 
-test('all five v0.2.0 slash commands are present', () => {
+test('all v0.3.0 slash commands are present', () => {
   const files = readdirSync(commandsDir).filter((f) => f.endsWith('.md'));
   for (const name of EXPECTED) {
     assert.ok(files.includes(`${name}.md`), `commands/${name}.md must exist`);

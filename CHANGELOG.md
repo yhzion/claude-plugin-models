@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] — 2026-05-14
+
+### Added
+- `plugins/glm/scripts/lib/git.mjs` — git context helpers
+  (`hasGitRepo`, `detectMainBranch`, `collectWorkingTreeDiff`,
+  `collectBranchDiff`, `collectCommitLog`).
+- `glm-companion review` subcommand and `/glm:review` slash command.
+  Supports `--scope auto|working-tree|branch`, `--base <ref>`,
+  `--background`, `--json`. Auto-detects scope from working-tree
+  dirtiness; falls back to `<main>...HEAD` branch diff.
+- `plugins/glm/prompts/review.md` — review prompt template with
+  `{{DIFF}}`, `{{COMMITS}}`, `{{BASE_REF}}`, `{{SCOPE}}`, `{{REPO_NAME}}`,
+  `{{BRANCH}}`, `{{BACKGROUND}}` placeholders. Enforces structured
+  output (`## Intent`, `## Issues`, `## Looks good`) with severity
+  enum (`critical`/`major`/`minor`).
+- `plugins/glm/schemas/review-output.schema.json` — JSON Schema
+  describing the structured form of a review for future consumers.
+- Tests: `tests/lib/git.test.mjs`, `tests/companion-review.test.mjs`,
+  `tests/review-schema.test.mjs`, `tests/smoke-review.test.mjs`
+  (live, gated by `GLM_SMOKE=1`).
+
+### Changed
+- Plugin version bumped to `0.3.0` in `plugin.json` and `marketplace.json`.
+
 ## [0.2.0] — 2026-05-14
 
 ### Added
