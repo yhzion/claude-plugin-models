@@ -6,30 +6,42 @@ Claude Code에서 외부 AI 모델을 사용하게 해주는 플러그인 모음
 
 ## 무엇을 하나
 
-이 저장소는 *마켓플레이스 + N개의 플러그인* 구조로, 각 플러그인이 하나의 외부 모델/서비스를 Claude Code에 연결합니다. 현재는 `glm` 하나가 들어있으며, 설치하면 Claude Code 안에서 `glm` 서브에이전트가 활성화되어 다음과 같은 한국어 트리거에 반응합니다:
+이 저장소는 *마켓플레이스 + N개의 플러그인* 구조로, 각 플러그인이 하나의 외부 모델/서비스를 Claude Code에 연결합니다. 현재 두 개의 플러그인이 들어있으며 (`glm`, `gemini`), 설치하면 동일한 이름의 서브에이전트가 활성화되어 다음과 같은 한국어 트리거에 반응합니다:
 
 - "glm 에이전트에게 이 함수 리뷰 시켜줘"
-- "glm한테 이 로직 어떻게 생각하는지 물어봐"
+- "gemini한테 이 로직 어떻게 생각하는지 물어봐"
 - "glm으로 이 유틸 함수 짜줘"
-- "glm에게 작성 시켜줘"
+- "gemini에게 작성 시켜줘"
 
-내부적으로는 부모 Claude Code 세션이 `claude --settings ~/.claude/settings.glm.json -p "<프롬프트>"`를 자식 프로세스로 띄워 GLM-5.1을 호출합니다.
+내부적으로는 부모 Claude Code 세션이 자식 프로세스를 띄워 모델을 호출합니다:
+
+- **GLM:** `claude --settings ~/.claude/settings.glm.json -p "<프롬프트>"` (z.ai의 Anthropic 호환 엔드포인트)
+- **Gemini:** `gemini -p "<프롬프트>"` (Google `gemini` CLI; OAuth 또는 `GEMINI_API_KEY`로 인증)
 
 ## 주요 기능
 
-- **자연어 디스패치** — "glm 에이전트에게 ~~ 시켜줘" 같은 한국어 트리거로 자동 위임
-- **슬래시 커맨드 6종** — `/glm:setup`, `/glm:rescue`, `/glm:review`, `/glm:status`, `/glm:result`, `/glm:cancel`
-- **잡 트래킹** — 모든 위임이 `~/.claude/glm-jobs/`에 영구 기록 (상태, PID, 로그, 결과)
+플러그인 간 인터페이스는 거의 동일합니다 — 차이는 모델 / 인증 방식에 한정.
+
+- **자연어 디스패치** — "glm 에이전트에게 ~~ 시켜줘" / "gemini한테 ~~ 물어봐" 같은 한국어 트리거로 자동 위임
+- **슬래시 커맨드 6종 × 2 플러그인** — 각각 `{setup, rescue, review, status, result, cancel}` (`/glm:*`, `/gemini:*`)
+- **잡 트래킹** — 모든 위임이 `~/.claude/glm-jobs/` 또는 `~/.claude/gemini-jobs/`에 영구 기록 (상태, PID, 로그, 결과)
 - **Foreground / Background** — 짧은 질의는 동기 응답, 큰 작업은 백그라운드로 ID만 받고 진행
-- **코드 리뷰** — `/glm:review`로 working-tree, 브랜치, 명시 base ref 비교 리뷰 (구조화 출력)
-- **프롬프트 스킬** — `glm-5-1-prompting`, `glm-cli-runtime`, `glm-result-handling` 세 스킬이 자동 로드되어 일관된 GLM 상호작용 보장
+- **코드 리뷰** — `/glm:review` 또는 `/gemini:review`로 working-tree, 브랜치, 명시 base ref 비교 리뷰 (구조화 출력)
+- **프롬프트 스킬** — 플러그인당 3종(`*-cli-runtime`, `*-result-handling`, `*-prompting`)이 자동 로드되어 일관된 상호작용 보장
 
 ## 요구사항
 
+공통:
 - **Claude Code** (CLI 또는 데스크탑 앱)
-- **Node.js 18+** — `glm-companion` 컴패니언 실행에 필요 (Node 내장 모듈만 사용)
+- **Node.js 18+** — 두 컴패니언 모두 실행에 필요 (Node 내장 모듈만 사용)
+- **git** — `/glm:review` 또는 `/gemini:review`를 사용할 경우 (저장소 안에서 호출)
+
+`glm` 플러그인 추가:
 - **z.ai 코딩 플랜** — 또는 Anthropic 호환 토큰이 있는 GLM 엔드포인트
-- **git** — `/glm:review`를 사용할 경우 (저장소 안에서 호출)
+
+`gemini` 플러그인 추가:
+- **`gemini` CLI** — https://github.com/google-gemini/gemini-cli 에서 설치 (`npm install -g @google/gemini-cli` 등)
+- **인증** — `gemini`를 터미널에서 한 번 실행해 OAuth 완료, 또는 `GEMINI_API_KEY` 환경변수 설정
 
 ## 설치
 
@@ -54,6 +66,7 @@ claude plugins install gemini@claude-plugin-models
 ```bash
 claude plugins marketplace add /path/to/local/claude-plugin-models
 claude plugins install glm@claude-plugin-models
+claude plugins install gemini@claude-plugin-models
 ```
 
 ## Quick Start
@@ -108,6 +121,8 @@ pong
 ```
 
 여기까지 동작했다면 모든 게 정상입니다. 다음은 [사용법](#사용법)에서 커맨드별 디테일을 참조하세요.
+
+> **Gemini도 동일 흐름**: `/gemini:setup` → `/gemini:rescue Reply with exactly: pong` → `/gemini:review`. 차이는 인증뿐 — z.ai 토큰 대신 OAuth(터미널에서 `gemini` 한 번 실행) 또는 `GEMINI_API_KEY` env. 응답은 `## Gemini Response (job gemini-task-...)` 헤더로 옵니다. 설정 파일은 만들지 않습니다 — `gemini` CLI가 `~/.gemini/`에서 자체 관리.
 
 ## 사용법
 
@@ -188,6 +203,15 @@ git diff 기반 코드 리뷰. 자동으로 working-tree(더러우면) 또는 `m
 [GLM-5.1의 응답]
 ```
 
+### Gemini는?
+
+위 6개 슬래시 커맨드 + 자연어 트리거가 그대로 `/gemini:*`, "gemini한테 ~~", "gemini 에이전트에게 ~~"로 미러됩니다. 모든 플래그·동작·출력 구조가 동일하며, **두 가지만 다릅니다**:
+
+- **인증** — `/gemini:setup`은 점검 전용 (settings 파일을 만들지 않음). gemini CLI가 자체 OAuth(`~/.gemini/oauth_creds.json`) 또는 `GEMINI_API_KEY` env로 관리.
+- **모델 오버라이드** — `/gemini:rescue --model gemini-2.5-flash <prompt>`로 잡 단위 모델 선택 가능 (기본은 `gemini-3.1-pro-preview`). `gemini-2.5-flash`는 코드 리뷰·짧은 Q&A에 충분히 빠르고 저렴.
+
+응답 헤더는 `## Gemini Response (job gemini-task-<id>)` 또는 리뷰의 경우 `## Gemini Review (...)`. 자세한 차별점은 `plugins/gemini/skills/gemini-prompting/SKILL.md` 참고.
+
 ## 스킬 (skills)
 
 세 가지 스킬이 함께 제공됩니다. Claude Code가 적절한 시점에 자동으로 로드해 사용합니다 — 사용자가 직접 호출할 필요는 없지만, 어떤 규칙으로 GLM과 상호작용하는지 이해하고 싶을 때 읽어볼 수 있습니다.
@@ -203,15 +227,30 @@ git diff 기반 코드 리뷰. 자동으로 working-tree(더러우면) 또는 `m
 
 ## Troubleshooting
 
+공통:
+
+| 증상 | 원인 / 조치 |
+|---|---|
+| `Not a git repository` (review) | `*/review` 커맨드는 git repo 안에서만 동작. 다른 디렉터리에서 실행 중인지 확인. |
+| `Nothing to review` | working tree가 깨끗하고 브랜치 커밋도 없음. `git status`로 확인 후 `--base <ref>` 명시. |
+| 잡이 무한 `running` 상태 | 자식 프로세스가 행. `/glm:cancel <id>` 또는 `/gemini:cancel <id>`로 정리. 빈번하면 `--background` 대신 foreground 사용. |
+| 슬래시 커맨드가 안 보임 | Claude Code 재시작 후 `/help`로 확인. 마켓플레이스 등록·설치 둘 다 했는지 점검. |
+
+GLM 전용:
+
 | 증상 | 원인 / 조치 |
 |---|---|
 | `Settings file does not exist` | `~/.claude/settings.glm.json`이 없거나 `GLM_SETTINGS_PATH`가 잘못됨. `/glm:setup`을 실행하거나 수동으로 생성. |
-| `Not a git repository` (review) | `/glm:review`는 git repo 안에서만 동작. 다른 디렉터리에서 실행 중인지 확인. |
-| `Nothing to review` | working tree가 깨끗하고 브랜치 커밋도 없음. `git status`로 확인 후 `--base <ref>` 명시. |
 | `401 Unauthorized` / 인증 실패 | z.ai 토큰이 만료됐거나 잘못됨. `~/.claude/settings.glm.json`의 `ANTHROPIC_AUTH_TOKEN` 재발급. |
-| 잡이 무한 `running` 상태 | 자식 프로세스가 행. `/glm:cancel <id>`로 정리. 빈번하면 `--background` 대신 foreground 사용. |
-| 슬래시 커맨드가 안 보임 | Claude Code 재시작 후 `/help`로 확인. 마켓플레이스 등록·설치 둘 다 했는지 점검. |
 | `ai-delegates`의 기존 `glm` 에이전트와 이름 충돌 | 둘 다 활성화돼 있으면 디스패치가 임의 — `ai-delegates/glm.md`를 비활성화하거나 이름 변경 권장. |
+
+Gemini 전용:
+
+| 증상 | 원인 / 조치 |
+|---|---|
+| `gemini CLI not found or not executable` | `gemini` CLI 미설치. https://github.com/google-gemini/gemini-cli 에서 설치 (`npm install -g @google/gemini-cli` 등). 또는 `GEMINI_BIN` env로 다른 경로 지정. |
+| `unauthenticated` / exit code 41 | gemini CLI는 설치됐지만 인증 미완. 터미널에서 `gemini`를 한 번 실행해 OAuth 완료, 또는 `GEMINI_API_KEY` env 설정 후 `/gemini:setup` 재실행. |
+| 백그라운드 잡이 `/gemini:cancel` 후에도 살아 있는 듯 | gemini CLI가 SIGTERM을 자체 무시하므로 companion은 process-group SIGTERM → SIGKILL escalation을 수행. 정상적으론 그래도 죽지만, 의심되면 `ps -ef \| grep gemini`로 확인 후 직접 `kill -9 <pid>`. |
 
 ## 구조
 
@@ -259,12 +298,14 @@ claude-plugin-models/                           # 마켓플레이스
 가벼운 smoke 테스트는 Node 내장 러너로 실행합니다:
 
 ```bash
-# 매니페스트 / 에이전트 / 라이브러리 / CLI 구조 검증 (외부 의존성 없음)
+# 매니페스트 / 에이전트 / 라이브러리 / CLI 구조 검증 (외부 의존성 없음, 두 플러그인 모두 포함)
 node --test tests/*.test.mjs tests/lib/*.test.mjs
 
 # 실제 GLM API 왕복 호출까지 검증 (z.ai API 키 필요, 토큰 소모)
-GLM_SMOKE=1 node --test tests/smoke-*.test.mjs
+GLM_SMOKE=1 node --test tests/smoke-glm.test.mjs tests/smoke-companion.test.mjs tests/smoke-review.test.mjs
 ```
+
+`tests/smoke-gemini.test.mjs`는 `GEMINI_BIN=/bin/true` 스텁으로 CLI 구조만 검증해 외부 의존성/토큰 소모 없이 항상 실행됩니다. Gemini API 왕복까지의 end-to-end smoke는 OAuth 의존성으로 현재 자동화되어 있지 않습니다.
 
 ## 로드맵
 
