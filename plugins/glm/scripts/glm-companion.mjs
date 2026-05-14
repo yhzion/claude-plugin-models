@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import { existsSync, readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import {
   createJob,
@@ -14,6 +15,16 @@ import {
   runClaudeForeground,
   spawnClaudeBackground,
 } from './lib/claude-runner.mjs';
+import {
+  hasGitRepo,
+  detectMainBranch,
+  collectWorkingTreeDiff,
+  collectBranchDiff,
+  collectCommitLog,
+} from './lib/git.mjs';
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const PLUGIN_ROOT = resolve(HERE, '..');
 
 const DEFAULT_SETTINGS_PATH = process.env.GLM_SETTINGS_PATH ?? join(homedir(), '.claude/settings.glm.json');
 const DEFAULT_JOBS_DIR = process.env.GLM_JOBS_DIR ?? join(homedir(), '.claude/glm-jobs/default');
@@ -161,6 +172,99 @@ function cmdResult(args) {
   process.stdout.write(output);
 }
 
+function cmdReview(args) {
+  const asJson = !!args.flags.json;
+  const background = !!args.flags.background;
+  const explicitBase = args.flags.base;
+  const explicitScope = args.flags.scope;
+  const cwd = process.cwd();
+
+  if (!hasGitRepo(cwd)) {
+    return fail({ ok: false, error: `Not a git repository: ${cwd}` }, asJson);
+  }
+  if (!existsSync(DEFAULT_SETTINGS_PATH)) {
+    return fail({ ok: false, error: `Settings file does not exist: ${DEFAULT_SETTINGS_PATH}. Run /glm:setup first.` }, asJson);
+  }
+
+  const baseRef = explicitBase ?? detectMainBranch(cwd);
+  let scope = explicitScope ?? 'auto';
+  let diff = '';
+  let commits = '';
+
+  if (scope === 'auto') {
+    const wtDiff = collectWorkingTreeDiff(cwd);
+    if (wtDiff.trim()) {
+      scope = 'working-tree';
+      diff = wtDiff;
+    } else if (baseRef) {
+      const branchDiff = collectBranchDiff(cwd, baseRef);
+      if (branchDiff.trim()) {
+        scope = 'branch';
+        diff = branchDiff;
+        commits = collectCommitLog(cwd, baseRef);
+      }
+    }
+  } else if (scope === 'working-tree') {
+    diff = collectWorkingTreeDiff(cwd);
+  } else if (scope === 'branch') {
+    if (!baseRef) return fail({ ok: false, error: 'review: --scope branch requires a detectable main branch or --base' }, asJson);
+    diff = collectBranchDiff(cwd, baseRef);
+    commits = collectCommitLog(cwd, baseRef);
+  } else {
+    return fail({ ok: false, error: `review: unknown --scope value: ${scope}` }, asJson);
+  }
+
+  if (!diff.trim()) {
+    return fail({ ok: false, error: 'Nothing to review — no changes detected (clean working tree and no branch commits).' }, asJson);
+  }
+
+  const templatePath = join(PLUGIN_ROOT, 'prompts/review.md');
+  const template = readFileSync(templatePath, 'utf8');
+  const branchName = (args.flags.branch ?? '').trim() || 'current';
+  const prompt = template
+    .replace('{{BACKGROUND}}', args.flags.background_text ?? '(none provided)')
+    .replace('{{REPO_NAME}}', basename(cwd))
+    .replace('{{BRANCH}}', branchName)
+    .replace('{{BASE_REF}}', baseRef ?? '(unknown)')
+    .replace('{{SCOPE}}', scope)
+    .replace('{{COMMITS}}', commits || '(none — working-tree diff)')
+    .replace('{{DIFF}}', diff);
+
+  ensureJobsDir();
+  const id = args.flags.id ?? generateJobId();
+  const logFile = join(DEFAULT_JOBS_DIR, `${id}.log`);
+  createJob(DEFAULT_JOBS_DIR, { id, prompt, jobClass: 'review', kind: 'review', logFile });
+
+  if (background) {
+    const { pid } = spawnClaudeBackground({ claudeBin: CLAUDE_BIN, settingsPath: DEFAULT_SETTINGS_PATH, prompt, logFile });
+    updateJob(DEFAULT_JOBS_DIR, id, { pid, status: 'running' });
+    if (asJson) return emit({ ok: true, id, status: 'running', pid, logFile, scope, baseRef }, true);
+    return emit(`${id} (review, background, pid=${pid}, scope=${scope})\n`, false);
+  }
+
+  updateJob(DEFAULT_JOBS_DIR, id, { status: 'running', pid: process.pid });
+  const { code, stdout, stderr } = runClaudeForeground({
+    claudeBin: CLAUDE_BIN,
+    settingsPath: DEFAULT_SETTINGS_PATH,
+    prompt,
+  });
+  writeFileSync(logFile, stdout + (stderr ? `\n[stderr]\n${stderr}` : ''), 'utf8');
+  const finalStatus = code === 0 ? 'completed' : 'failed';
+  updateJob(DEFAULT_JOBS_DIR, id, {
+    status: finalStatus,
+    errorMessage: code === 0 ? null : stderr || `exit ${code}`,
+  });
+
+  if (asJson) {
+    return emit({ ok: code === 0, id, status: finalStatus, scope, baseRef, output: stdout, error: code === 0 ? null : stderr }, true);
+  }
+  process.stdout.write(stdout);
+  if (code !== 0) {
+    process.stderr.write(stderr);
+    process.exit(code);
+  }
+}
+
 function cmdCancel(args) {
   const asJson = !!args.flags.json;
   const id = args._[1];
@@ -181,6 +285,7 @@ function cmdHelp() {
 Usage:
   glm-companion setup [--json]
   glm-companion task [--background] [--write] [--json] [--id <id>] <prompt>
+  glm-companion review [--base <ref>] [--scope auto|working-tree|branch] [--background] [--json]
   glm-companion status [<id>] [--json]
   glm-companion result <id> [--json]
   glm-companion cancel <id> [--json]
@@ -198,6 +303,7 @@ function main() {
   switch (cmd) {
     case 'setup':   return cmdSetup(args);
     case 'task':    return cmdTask(args);
+    case 'review':  return cmdReview(args);
     case 'status':  return cmdStatus(args);
     case 'result':  return cmdResult(args);
     case 'cancel':  return cmdCancel(args);
