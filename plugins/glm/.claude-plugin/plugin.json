@@ -1,6 +1,6 @@
 {
   "name": "glm",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Delegate tasks to z.ai's GLM-5.1 model via claude -p subprocess.",
   "author": {
     "name": "yhzion",
