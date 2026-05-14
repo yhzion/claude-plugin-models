@@ -2,7 +2,7 @@
 
 Claude Code 플러그인으로 z.ai의 **GLM-5.1** 모델에 작업을 위임합니다. 한국어 자연어로 "glm 에이전트에게 ~~ 시켜줘"라고 말하면 Claude Code가 알아서 GLM에 디스패치합니다.
 
-> **상태:** v0.2.0 — `glm-companion` CLI + 슬래시 커맨드 5종 (`/glm:setup`, `/glm:rescue`, `/glm:status`, `/glm:result`, `/glm:cancel`) + 잡 트래킹 + foreground/background 실행. 리뷰(`/glm:review`)는 v0.3.0 예정.
+> **상태:** v0.4.0 — `glm-companion` CLI, 슬래시 커맨드 6종 (`/glm:setup`, `/glm:rescue`, `/glm:review`, `/glm:status`, `/glm:result`, `/glm:cancel`), 잡 트래킹, foreground/background 실행, git diff 기반 코드 리뷰, 프롬프트 엔지니어링 스킬(`glm-5-1-prompting`, `glm-cli-runtime`, `glm-result-handling`).
 
 ## 무엇을 하나
 
@@ -92,6 +92,12 @@ claude-plugin-glm/                              # 마켓플레이스
     ├── commands/{setup,rescue,review,status,result,cancel}.md
     ├── prompts/review.md                       # 리뷰 프롬프트 템플릿
     ├── schemas/review-output.schema.json       # 리뷰 출력 구조 스키마
+    ├── skills/
+    │   ├── glm-cli-runtime/SKILL.md            # 컴패니언 CLI 호출 규약
+    │   ├── glm-result-handling/SKILL.md        # 응답 표시 규칙
+    │   └── glm-5-1-prompting/                  # GLM 프롬프트 엔지니어링
+    │       ├── SKILL.md
+    │       └── references/{prompt-blocks,glm-prompt-recipes,glm-prompt-antipatterns}.md
     └── scripts/
         ├── glm-companion.mjs                   # CLI 오케스트레이터
         └── lib/{state,claude-runner,git}.mjs   # 잡 상태 / 자식 프로세스 / git diff
@@ -101,16 +107,37 @@ claude-plugin-glm/                              # 마켓플레이스
 
 설계 문서: [`docs/DESIGN.md`](docs/DESIGN.md)
 
+## 스킬 (skills)
+
+세 가지 스킬이 함께 제공됩니다. Claude Code가 적절한 시점에 자동으로 로드해 사용합니다 — 사용자가 직접 호출할 필요는 없지만, 어떤 규칙으로 GLM과 상호작용하는지 이해하고 싶을 때 읽어볼 수 있습니다.
+
+| 스킬 | 언제 사용되나 |
+|---|---|
+| `glm-cli-runtime` | 에이전트가 `glm-companion`을 호출해야 할 때 — 서브커맨드 계약, exit code, 환경변수, 실패 복구 시퀀스 |
+| `glm-result-handling` | GLM 응답을 사용자에게 표시해야 할 때 — `## GLM Response` 헤더, verbatim 전달, 빈 응답·잘림·거부 처리 |
+| `glm-5-1-prompting` | GLM에 보낼 프롬프트를 조립할 때 — 블록 라이브러리, 5개 레시피, 10개 안티패턴 |
+
+## Troubleshooting
+
+| 증상 | 원인 / 조치 |
+|---|---|
+| `Settings file does not exist` | `~/.claude/settings.glm.json`이 없거나 `GLM_SETTINGS_PATH`가 잘못됨. `/glm:setup`을 실행하거나 수동으로 생성. |
+| `Not a git repository` (review) | `/glm:review`는 git repo 안에서만 동작. 다른 디렉터리에서 실행 중인지 확인. |
+| `Nothing to review` | working tree가 깨끗하고 브랜치 커밋도 없음. `git status`로 확인 후 `--base <ref>` 명시. |
+| `401 Unauthorized` / 인증 실패 | z.ai 토큰이 만료됐거나 잘못됨. `~/.claude/settings.glm.json`의 `ANTHROPIC_AUTH_TOKEN` 재발급. |
+| 잡이 무한 `running` 상태 | 자식 프로세스가 행. `/glm:cancel <id>`로 정리. 빈번하면 `--background` 대신 foreground 사용. |
+| `ai-delegates`의 기존 `glm` 에이전트와 이름 충돌 | 둘 다 활성화돼 있으면 디스패치가 임의 — `ai-delegates/glm.md`를 비활성화하거나 이름 변경 권장. |
+
 ## 테스트
 
 가벼운 smoke 테스트는 Node 내장 러너로 실행합니다:
 
 ```bash
-# 매니페스트 / 에이전트 구조 검증 (외부 의존성 없음)
-node --test tests/*.test.mjs
+# 매니페스트 / 에이전트 / 라이브러리 / CLI 구조 검증 (외부 의존성 없음)
+node --test tests/*.test.mjs tests/lib/*.test.mjs
 
 # 실제 GLM API 왕복 호출까지 검증 (z.ai API 키 필요, 토큰 소모)
-GLM_SMOKE=1 node --test tests/*.test.mjs
+GLM_SMOKE=1 node --test tests/smoke-*.test.mjs
 ```
 
 ## 로드맵
@@ -120,7 +147,7 @@ GLM_SMOKE=1 node --test tests/*.test.mjs
 | ✅ v0.1.0 | 마켓플레이스 + `glm` 위임 에이전트 |
 | ✅ v0.2.0 | `glm-companion` CLI, `/glm:setup` `/glm:rescue` `/glm:status` `/glm:result` `/glm:cancel`, 잡 트래킹, 백그라운드 실행, `glm-rescue` 에이전트 |
 | ✅ v0.3.0 | `/glm:review` — git diff 기반 코드 리뷰 (working-tree / branch / 명시 base ref), 구조화 출력 (`## Intent`, `## Issues`, `## Looks good`) |
-| ⬜ v0.4.0 | `glm-5-1-prompting` 스킬, README 폴리시 |
+| ✅ v0.4.0 | `glm-5-1-prompting` + `glm-cli-runtime` + `glm-result-handling` 스킬, README 폴리시, MIT LICENSE |
 
 ## 라이선스
 

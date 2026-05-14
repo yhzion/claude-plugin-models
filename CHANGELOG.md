@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] — 2026-05-14
+
+### Added
+- `plugins/glm/skills/glm-cli-runtime/SKILL.md` — runtime contract for
+  invoking `glm-companion`. Documents subcommand exit codes, env-var
+  overrides, foreground vs background trade-offs, and failure recovery
+  sequence.
+- `plugins/glm/skills/glm-result-handling/SKILL.md` — output presentation
+  rules: canonical `## GLM Response` header, verbatim forwarding,
+  symptom→action table for empty/truncated/refusal outputs, background
+  job follow-up flow.
+- `plugins/glm/skills/glm-5-1-prompting/SKILL.md` + 3 references:
+  - `references/prompt-blocks.md` — persona blocks, output-format blocks,
+    verification blocks, refusal blocks, depth hints, Korean quirks.
+  - `references/glm-prompt-recipes.md` — five composed templates (review,
+    refactor, design exploration, bug diagnosis, documentation).
+  - `references/glm-prompt-antipatterns.md` — ten failure modes with
+    bad/good rewrites (vague verbs, mixed-purpose, no output format,
+    buried instructions, fuzzy confidence, JSON without schema, etc.).
+- `tests/skills.test.mjs` — frontmatter, body, reference files, and
+  cross-link validation.
+- `LICENSE` (MIT).
+
+### Changed
+- Plugin version bumped to `0.4.0` in `plugin.json` and `marketplace.json`.
+- `README.md` — Skills section, Troubleshooting section, roadmap v0.4.0 ✅.
+
 ## [0.3.0] — 2026-05-14
 
 ### Added
