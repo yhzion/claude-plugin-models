@@ -31,7 +31,7 @@ Core difference: GLM spawns `claude --settings settings.glm.json -p "prompt"` as
 Following the codex marketplace pattern: the repo root is a *marketplace* and the plugin itself lives under `plugins/glm/` so multiple plugin variants can coexist in the same repo later.
 
 ```
-claude-plugin-glm/                  # repo root = marketplace
+claude-plugin-models/               # repo root = marketplace
 ├── .claude-plugin/
 │   └── marketplace.json            # Marketplace manifest (lists plugins)
 ├── plugins/
@@ -203,10 +203,10 @@ No stop-time review gate in v1 (can be added later).
 **User flow:**
 ```bash
 # Add the marketplace (this repo)
-claude plugins marketplace add yhzion/claude-plugin-glm
+claude plugins marketplace add yhzion/claude-plugin-models
 
 # Install the glm plugin from it
-claude plugins install glm@yhzion-glm
+claude plugins install glm@claude-plugin-models
 
 # Configure API key in a Claude Code session
 /glm:setup
@@ -214,8 +214,8 @@ claude plugins install glm@yhzion-glm
 
 **For local development (testing the marketplace from a local clone):**
 ```bash
-claude plugins marketplace add /path/to/claude-plugin-glm
-claude plugins install glm@yhzion-glm
+claude plugins marketplace add /path/to/claude-plugin-models
+claude plugins install glm@claude-plugin-models
 ```
 
 ## What We're NOT Building (v1)

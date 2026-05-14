@@ -15,7 +15,7 @@ test('repo has a README.md so marketplace discovery is meaningful', () => {
 test('README documents the marketplace install command', () => {
   const md = readFileSync(readmePath, 'utf8');
   assert.ok(
-    md.includes('claude plugins marketplace add yhzion/claude-plugin-glm'),
+    md.includes('claude plugins marketplace add yhzion/claude-plugin-models'),
     'README must show the marketplace install command users need to run'
   );
   assert.ok(

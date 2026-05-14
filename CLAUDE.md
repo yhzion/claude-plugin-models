@@ -1,15 +1,15 @@
-# CLAUDE.md — claude-plugin-glm
+# CLAUDE.md — claude-plugin-models
 
 ## Project
 
-Claude Code plugin that delegates tasks to z.ai's GLM-5.1 model.
+Claude Code marketplace for plugins that bring external AI models into Claude Code. First plugin: `glm` (delegates tasks to z.ai's GLM-5.1).
 
-- **Plugin type:** Local/GitHub marketplace
-- **Model:** GLM-5.1 via z.ai Anthropic-compatible API
+- **Plugin type:** Local/GitHub marketplace (multi-plugin, one per external model)
+- **Current plugins:** `glm` (z.ai GLM-5.1 via Anthropic-compatible API)
 - **Reference plugin:** `~/.claude/plugins/cache/openai-codex/codex/1.0.4/`
-- **Repo / marketplace:** `yhzion/claude-plugin-glm` (public)
-- **Target install:** `claude plugins marketplace add yhzion/claude-plugin-glm` then `claude plugins install glm@yhzion-glm`
-- **Layout:** marketplace at repo root, plugin at `plugins/glm/` (codex pattern)
+- **Repo / marketplace:** `yhzion/claude-plugin-models` (public); marketplace name `claude-plugin-models`
+- **Target install:** `claude plugins marketplace add yhzion/claude-plugin-models` then `claude plugins install glm@claude-plugin-models`
+- **Layout:** marketplace at repo root, plugins at `plugins/<id>/` (codex pattern). Plugin id `glm` is the user-facing surface (`/glm:*`, `glm` agent) and is preserved across the repo rename.
 
 ## Architecture
 

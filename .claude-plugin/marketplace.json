@@ -1,11 +1,11 @@
 {
-  "name": "yhzion-glm",
+  "name": "claude-plugin-models",
   "owner": {
     "name": "yhzion",
     "email": "gplusit@gmail.com"
   },
   "metadata": {
-    "description": "Marketplace hosting the GLM plugin — delegate tasks to z.ai's GLM-5.1 from Claude Code.",
+    "description": "Marketplace for plugins that bring external AI models to Claude Code. First plugin: GLM (z.ai's GLM-5.1).",
     "version": "0.5.0"
   },
   "plugins": [

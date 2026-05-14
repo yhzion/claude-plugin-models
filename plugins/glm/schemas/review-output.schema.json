@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/yhzion/claude-plugin-glm/blob/main/plugins/glm/schemas/review-output.schema.json",
+  "$id": "https://github.com/yhzion/claude-plugin-models/blob/main/plugins/glm/schemas/review-output.schema.json",
   "title": "GLM Code Review Output",
   "description": "Structured form of /glm:review output. The companion currently returns markdown; this schema describes the equivalent shape for future consumers that want to parse the review programmatically.",
   "type": "object",

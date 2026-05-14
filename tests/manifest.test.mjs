@@ -26,10 +26,10 @@ test('plugin manifest author uses yhzion personal account', () => {
   assert.equal(manifest.author?.email, 'gplusit@gmail.com');
 });
 
-test('plugin manifest points to yhzion/claude-plugin-glm repository', () => {
+test('plugin manifest points to yhzion/claude-plugin-models repository', () => {
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
   assert.ok(
-    manifest.repository?.includes('yhzion/claude-plugin-glm'),
-    `repository field must reference yhzion/claude-plugin-glm, got: ${manifest.repository}`
+    manifest.repository?.includes('yhzion/claude-plugin-models'),
+    `repository field must reference yhzion/claude-plugin-models, got: ${manifest.repository}`
   );
 });

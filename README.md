@@ -1,12 +1,12 @@
-# claude-plugin-glm
+# claude-plugin-models
 
-Claude Code 플러그인으로 z.ai의 **GLM-5.1** 모델에 작업을 위임합니다. 한국어 자연어로 "glm 에이전트에게 ~~ 시켜줘"라고 말하면 Claude Code가 알아서 GLM에 디스패치합니다.
+Claude Code에서 외부 AI 모델을 사용하게 해주는 플러그인 모음. 현재 수록: **`glm`** (z.ai GLM-5.1 위임). 한국어 자연어로 "glm 에이전트에게 ~~ 시켜줘"라고 말하면 Claude Code가 알아서 GLM에 디스패치합니다.
 
 > **상태:** v0.5.0 — `glm-companion` CLI, 슬래시 커맨드 6종, 잡 트래킹(foreground/background), git diff 기반 코드 리뷰, 프롬프트 엔지니어링 스킬 3종.
 
 ## 무엇을 하나
 
-이 플러그인은 *마켓플레이스 + 단일 플러그인* 구조입니다. 설치하면 Claude Code 안에서 `glm`이라는 서브에이전트가 활성화되고, 다음과 같은 한국어 트리거에 반응합니다:
+이 저장소는 *마켓플레이스 + N개의 플러그인* 구조로, 각 플러그인이 하나의 외부 모델/서비스를 Claude Code에 연결합니다. 현재는 `glm` 하나가 들어있으며, 설치하면 Claude Code 안에서 `glm` 서브에이전트가 활성화되어 다음과 같은 한국어 트리거에 반응합니다:
 
 - "glm 에이전트에게 이 함수 리뷰 시켜줘"
 - "glm한테 이 로직 어떻게 생각하는지 물어봐"
@@ -35,10 +35,10 @@ Claude Code 플러그인으로 z.ai의 **GLM-5.1** 모델에 작업을 위임합
 
 ```bash
 # 1) 마켓플레이스 등록 (이 repo 자체가 마켓플레이스)
-claude plugins marketplace add yhzion/claude-plugin-glm
+claude plugins marketplace add yhzion/claude-plugin-models
 
 # 2) glm 플러그인 설치
-claude plugins install glm@yhzion-glm
+claude plugins install glm@claude-plugin-models
 
 # 3) Claude Code 재시작 (슬래시 커맨드와 에이전트 로드)
 
@@ -50,8 +50,8 @@ claude plugins install glm@yhzion-glm
 **로컬 개발/테스트** — GitHub 경로 대신 로컬 클론 경로를 줘도 됩니다:
 
 ```bash
-claude plugins marketplace add /path/to/local/claude-plugin-glm
-claude plugins install glm@yhzion-glm
+claude plugins marketplace add /path/to/local/claude-plugin-models
+claude plugins install glm@claude-plugin-models
 ```
 
 ## Quick Start
@@ -211,9 +211,9 @@ git diff 기반 코드 리뷰. 자동으로 working-tree(더러우면) 또는 `m
 ## 구조
 
 ```
-claude-plugin-glm/                              # 마켓플레이스
+claude-plugin-models/                           # 마켓플레이스
 ├── .claude-plugin/marketplace.json             # 플러그인 목록
-└── plugins/glm/                                # glm 플러그인
+└── plugins/glm/                                # glm 플러그인 (외부 모델 #1)
     ├── .claude-plugin/plugin.json
     ├── agents/
     │   ├── glm.md                              # 간단한 위임 에이전트
