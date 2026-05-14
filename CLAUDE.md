@@ -7,7 +7,9 @@ Claude Code plugin that delegates tasks to z.ai's GLM-5.1 model.
 - **Plugin type:** Local/GitHub marketplace
 - **Model:** GLM-5.1 via z.ai Anthropic-compatible API
 - **Reference plugin:** `~/.claude/plugins/cache/openai-codex/codex/1.0.4/`
-- **Target install:** `claude plugins marketplace add datamaker-kr/claude-plugin-glm`
+- **Repo / marketplace:** `yhzion/claude-plugin-glm` (public)
+- **Target install:** `claude plugins marketplace add yhzion/claude-plugin-glm` then `claude plugins install glm@yhzion-glm`
+- **Layout:** marketplace at repo root, plugin at `plugins/glm/` (codex pattern)
 
 ## Architecture
 
@@ -22,10 +24,12 @@ See `docs/DESIGN.md` for full specification.
 
 ## Key Files
 
-- `scripts/glm-companion.mjs` — Core CLI runtime
-- `scripts/lib/claude-runner.mjs` — `claude -p` subprocess management
-- `agents/glm-rescue.md` — Delegation subagent
-- `.claude-plugin/plugin.json` — Plugin manifest
+- `.claude-plugin/marketplace.json` — Marketplace manifest (lists plugins)
+- `plugins/glm/.claude-plugin/plugin.json` — Plugin manifest
+- `plugins/glm/agents/glm.md` — Simple GLM delegate agent (MVP)
+- `plugins/glm/agents/glm-rescue.md` — Rescue-style delegation (Phase 2+)
+- `plugins/glm/scripts/glm-companion.mjs` — Core CLI runtime (Phase 2+)
+- `tests/*.test.mjs` — node --test smoke tests
 
 ## Reference
 

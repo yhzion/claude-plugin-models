@@ -1,0 +1,17 @@
+# IDE / tool local state
+.openchrome/
+.idea/
+.vscode/
+
+# Node
+node_modules/
+npm-debug.log*
+.npm/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Plugin-local user settings (per CLAUDE.md convention)
+.claude/*.local.md
+.claude/worktrees/

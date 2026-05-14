@@ -28,50 +28,46 @@ Core difference: GLM spawns `claude --settings settings.glm.json -p "prompt"` as
 
 ### Plugin Structure
 
+Following the codex marketplace pattern: the repo root is a *marketplace* and the plugin itself lives under `plugins/glm/` so multiple plugin variants can coexist in the same repo later.
+
 ```
-claude-plugin-glm/
+claude-plugin-glm/                  # repo root = marketplace
 ├── .claude-plugin/
-│   └── plugin.json              # Manifest
-├── agents/
-│   └── glm-rescue.md            # Subagent for task delegation
-├── commands/
-│   ├── rescue.md                # /glm:rescue
-│   ├── review.md                # /glm:review
-│   ├── setup.md                 # /glm:setup (API key config)
-│   ├── status.md                # /glm:status
-│   ├── result.md                # /glm:result
-│   └── cancel.md                # /glm:cancel
-├── hooks/
-│   └── hooks.json               # Session lifecycle hooks
-├── scripts/
-│   ├── glm-companion.mjs        # Core runtime (~300-400 lines)
-│   └── lib/
-│       ├── args.mjs             # Arg parsing (from Codex)
-│       ├── claude-runner.mjs    # claude -p subprocess management
-│       ├── fs.mjs               # File utilities
-│       ├── git.mjs              # Git context collection (for review)
-│       ├── job-control.mjs      # Job tracking
-│       ├── process.mjs          # Process management
-│       ├── render.mjs           # Output rendering
-│       ├── state.mjs            # State file management
-│       └── workspace.mjs        # Workspace root resolution
-├── skills/
-│   ├── glm-cli-runtime/
-│   │   └── SKILL.md             # Runtime rules for rescue subagent
-│   ├── glm-result-handling/
-│   │   └── SKILL.md             # Result interpretation rules
-│   └── glm-5-1-prompting/
-│       ├── SKILL.md             # Prompt engineering for GLM-5.1
-│       └── references/
-│           ├── prompt-blocks.md
-│           ├── glm-prompt-recipes.md
-│           └── glm-prompt-antipatterns.md
-├── prompts/
-│   └── review.md                # Review prompt template
-├── schemas/
-│   └── review-output.schema.json
+│   └── marketplace.json            # Marketplace manifest (lists plugins)
+├── plugins/
+│   └── glm/                        # The plugin itself
+│       ├── .claude-plugin/
+│       │   └── plugin.json         # Plugin manifest
+│       ├── agents/
+│       │   ├── glm.md              # Simple delegate (MVP)
+│       │   └── glm-rescue.md       # Rescue-style task delegation (Phase 2+)
+│       ├── commands/
+│       │   ├── rescue.md           # /glm:rescue
+│       │   ├── review.md           # /glm:review
+│       │   ├── setup.md            # /glm:setup (API key config)
+│       │   ├── status.md           # /glm:status
+│       │   ├── result.md           # /glm:result
+│       │   └── cancel.md           # /glm:cancel
+│       ├── hooks/
+│       │   └── hooks.json          # Session lifecycle hooks
+│       ├── scripts/
+│       │   ├── glm-companion.mjs   # Core runtime (~300-400 lines)
+│       │   └── lib/                # Shared helpers (args, fs, git, ...)
+│       ├── skills/
+│       │   ├── glm-cli-runtime/SKILL.md
+│       │   ├── glm-result-handling/SKILL.md
+│       │   └── glm-5-1-prompting/
+│       │       ├── SKILL.md
+│       │       └── references/
+│       ├── prompts/review.md
+│       └── schemas/review-output.schema.json
+├── tests/                          # Smoke tests (node --test)
+│   ├── manifest.test.mjs
+│   ├── marketplace.test.mjs
+│   ├── agent.test.mjs
+│   └── smoke-glm.test.mjs          # Live GLM API call (env-gated)
 ├── docs/
-│   └── DESIGN.md                # This file
+│   └── DESIGN.md                   # This file
 └── README.md
 ```
 
@@ -206,20 +202,20 @@ No stop-time review gate in v1 (can be added later).
 
 **User flow:**
 ```bash
-# Add marketplace
-claude plugins marketplace add datamaker-kr/claude-plugin-glm
+# Add the marketplace (this repo)
+claude plugins marketplace add yhzion/claude-plugin-glm
 
-# Install
-claude plugins install glm
+# Install the glm plugin from it
+claude plugins install glm@yhzion-glm
 
-# Configure API key
-# In Claude Code session: /glm:setup
+# Configure API key in a Claude Code session
+/glm:setup
 ```
 
-**For local development:**
+**For local development (testing the marketplace from a local clone):**
 ```bash
-# Symlink
-ln -s ~/datamaker/claude-plugin-glm ~/.claude/plugins/local/glm
+claude plugins marketplace add /path/to/claude-plugin-glm
+claude plugins install glm@yhzion-glm
 ```
 
 ## What We're NOT Building (v1)
