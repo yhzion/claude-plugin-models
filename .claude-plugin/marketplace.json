@@ -1,0 +1,15 @@
+{
+  "name": "datamaker-glm",
+  "owner": {
+    "name": "datamaker",
+    "email": "youngho.jeon@datamaker.io"
+  },
+  "plugins": [
+    {
+      "name": "glm",
+      "source": "./",
+      "description": "Delegate tasks to z.ai's GLM-5.1 model via claude -p subprocess.",
+      "version": "0.1.0"
+    }
+  ]
+}
