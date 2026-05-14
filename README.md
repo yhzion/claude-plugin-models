@@ -1,8 +1,8 @@
 # claude-plugin-models
 
-Claude Code에서 외부 AI 모델을 사용하게 해주는 플러그인 모음. 현재 수록: **`glm`** (z.ai GLM-5.1 위임). 한국어 자연어로 "glm 에이전트에게 ~~ 시켜줘"라고 말하면 Claude Code가 알아서 GLM에 디스패치합니다.
+Claude Code에서 외부 AI 모델을 사용하게 해주는 플러그인 모음. 현재 수록: **`glm`** (z.ai GLM-5.1 위임), **`gemini`** (Google Gemini 위임). 한국어 자연어로 "glm 에이전트에게 ~~ 시켜줘" / "gemini한테 이거 물어봐"라고 말하면 Claude Code가 해당 모델로 디스패치합니다.
 
-> **상태:** v0.5.0 — `glm-companion` CLI, 슬래시 커맨드 6종, 잡 트래킹(foreground/background), git diff 기반 코드 리뷰, 프롬프트 엔지니어링 스킬 3종.
+> **상태:** v0.6.0 — GLM은 v0.5.0 surface 그대로(`glm-companion` CLI, 슬래시 커맨드 6종, 잡 트래킹, `/glm:review`, 스킬 3종). Gemini 플러그인 MVP 추가: `gemini-companion` CLI, 슬래시 커맨드 6종, `/gemini:review`, 스킬 3종. **process-group 기반 cancel** (gemini CLI는 SIGTERM 무시).
 
 ## 무엇을 하나
 
@@ -37,14 +37,16 @@ Claude Code에서 외부 AI 모델을 사용하게 해주는 플러그인 모음
 # 1) 마켓플레이스 등록 (이 repo 자체가 마켓플레이스)
 claude plugins marketplace add yhzion/claude-plugin-models
 
-# 2) glm 플러그인 설치
+# 2) 원하는 플러그인 설치 (둘 다 받아도 됨)
 claude plugins install glm@claude-plugin-models
+claude plugins install gemini@claude-plugin-models
 
 # 3) Claude Code 재시작 (슬래시 커맨드와 에이전트 로드)
 
 # 4) 검증: /help 입력 시 다음이 보여야 정상
 #    - /glm:setup, /glm:rescue, /glm:review, /glm:status, /glm:result, /glm:cancel
-#    - /agents에서 glm, glm-rescue 두 서브에이전트
+#    - /gemini:setup, /gemini:rescue, /gemini:review, /gemini:status, /gemini:result, /gemini:cancel
+#    - /agents에서 glm, glm-rescue, gemini, gemini-rescue 네 서브에이전트
 ```
 
 **로컬 개발/테스트** — GitHub 경로 대신 로컬 클론 경로를 줘도 됩니다:
@@ -195,6 +197,9 @@ git diff 기반 코드 리뷰. 자동으로 working-tree(더러우면) 또는 `m
 | `glm-cli-runtime` | 에이전트가 `glm-companion`을 호출해야 할 때 — 서브커맨드 계약, exit code, 환경변수, 실패 복구 시퀀스 |
 | `glm-result-handling` | GLM 응답을 사용자에게 표시해야 할 때 — `## GLM Response` 헤더, verbatim 전달, 빈 응답·잘림·거부 처리 |
 | `glm-5-1-prompting` | GLM에 보낼 프롬프트를 조립할 때 — 블록 라이브러리, 5개 레시피, 10개 안티패턴 |
+| `gemini-cli-runtime` | 에이전트가 `gemini-companion`을 호출해야 할 때 — exit code 41(unauthenticated) 처리, process-group cancel 규약 |
+| `gemini-result-handling` | Gemini 응답을 표시해야 할 때 — `## Gemini Response` 헤더, stderr 노이즈 제거, JSON 모드 토큰 stats |
+| `gemini-prompting` | Gemini에 보낼 프롬프트를 조립할 때 — 모델 선택(pro-preview vs 2.5-flash), 블록 라이브러리, 레시피, 안티패턴 |
 
 ## Troubleshooting
 
@@ -213,26 +218,39 @@ git diff 기반 코드 리뷰. 자동으로 working-tree(더러우면) 또는 `m
 ```
 claude-plugin-models/                           # 마켓플레이스
 ├── .claude-plugin/marketplace.json             # 플러그인 목록
-└── plugins/glm/                                # glm 플러그인 (외부 모델 #1)
+├── plugins/glm/                                # glm 플러그인 (외부 모델 #1)
+│   ├── .claude-plugin/plugin.json
+│   ├── agents/
+│   │   ├── glm.md                              # 간단한 위임 에이전트
+│   │   └── glm-rescue.md                       # 잡 라이프사이클 위임 에이전트
+│   ├── commands/{setup,rescue,review,status,result,cancel}.md
+│   ├── prompts/review.md                       # 리뷰 프롬프트 템플릿
+│   ├── schemas/review-output.schema.json       # 리뷰 출력 구조 스키마
+│   ├── skills/
+│   │   ├── glm-cli-runtime/SKILL.md            # 컴패니언 CLI 호출 규약
+│   │   ├── glm-result-handling/SKILL.md        # 응답 표시 규칙
+│   │   └── glm-5-1-prompting/                  # GLM 프롬프트 엔지니어링
+│   │       ├── SKILL.md
+│   │       └── references/{prompt-blocks,glm-prompt-recipes,glm-prompt-antipatterns}.md
+│   └── scripts/
+│       ├── glm-companion.mjs                   # CLI 오케스트레이터
+│       └── lib/{state,claude-runner,git}.mjs   # 잡 상태 / 자식 프로세스 / git diff
+└── plugins/gemini/                             # gemini 플러그인 (외부 모델 #2)
     ├── .claude-plugin/plugin.json
-    ├── agents/
-    │   ├── glm.md                              # 간단한 위임 에이전트
-    │   └── glm-rescue.md                       # 잡 라이프사이클 위임 에이전트
+    ├── agents/{gemini,gemini-rescue}.md        # 위임 / 잡 라이프사이클 에이전트
     ├── commands/{setup,rescue,review,status,result,cancel}.md
     ├── prompts/review.md                       # 리뷰 프롬프트 템플릿
     ├── schemas/review-output.schema.json       # 리뷰 출력 구조 스키마
     ├── skills/
-    │   ├── glm-cli-runtime/SKILL.md            # 컴패니언 CLI 호출 규약
-    │   ├── glm-result-handling/SKILL.md        # 응답 표시 규칙
-    │   └── glm-5-1-prompting/                  # GLM 프롬프트 엔지니어링
-    │       ├── SKILL.md
-    │       └── references/{prompt-blocks,glm-prompt-recipes,glm-prompt-antipatterns}.md
+    │   ├── gemini-cli-runtime/SKILL.md         # 컴패니언 CLI 호출 규약 (process-group cancel)
+    │   ├── gemini-result-handling/SKILL.md     # 응답 표시 규칙 (stderr 노이즈 분리)
+    │   └── gemini-prompting/SKILL.md           # Gemini 프롬프트 엔지니어링 (모델 선택 포함)
     └── scripts/
-        ├── glm-companion.mjs                   # CLI 오케스트레이터
-        └── lib/{state,claude-runner,git}.mjs   # 잡 상태 / 자식 프로세스 / git diff
+        ├── gemini-companion.mjs                # CLI 오케스트레이터
+        └── lib/{state,gemini-runner,git}.mjs   # 잡 상태 / detached spawn+그룹 kill / git diff
 ```
 
-잡 파일은 `~/.claude/glm-jobs/default/<job-id>.json` (또는 `GLM_JOBS_DIR` 환경변수 경로)에 저장됩니다.
+잡 파일은 `~/.claude/glm-jobs/default/<job-id>.json` (또는 `GLM_JOBS_DIR`), `~/.claude/gemini-jobs/default/<job-id>.json` (또는 `GEMINI_JOBS_DIR`)에 저장됩니다.
 
 설계 문서: [`docs/DESIGN.md`](docs/DESIGN.md)
 
@@ -257,6 +275,7 @@ GLM_SMOKE=1 node --test tests/smoke-*.test.mjs
 | ✅ v0.3.0 | `/glm:review` — git diff 기반 코드 리뷰 (working-tree / branch / 명시 base ref), 구조화 출력 (`## Intent`, `## Issues`, `## Looks good`) |
 | ✅ v0.4.0 | `glm-5-1-prompting` + `glm-cli-runtime` + `glm-result-handling` 스킬, README 1차 폴리시, MIT LICENSE |
 | ✅ v0.5.0 | README 재구성 (마켓플레이스 컨벤션 적용) — 요구사항·Quick Start·커맨드별 사용법 명시화 |
+| ✅ v0.6.0 | `gemini` 플러그인 MVP — `gemini-companion` CLI, 슬래시 커맨드 6종, `/gemini:review` (git diff 기반), 스킬 3종, OAuth/`GEMINI_API_KEY` 기반 인증, 시그널 무시 CLI에 대한 process-group cancel |
 
 ## 라이선스
 

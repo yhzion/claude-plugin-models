@@ -1,0 +1,11 @@
+{
+  "name": "gemini",
+  "version": "0.1.0",
+  "description": "Delegate tasks to Google's Gemini model via gemini CLI subprocess.",
+  "author": {
+    "name": "yhzion",
+    "email": "gplusit@gmail.com"
+  },
+  "homepage": "https://github.com/yhzion/claude-plugin-models",
+  "repository": "https://github.com/yhzion/claude-plugin-models"
+}
