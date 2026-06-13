@@ -88,7 +88,7 @@ function ensureJobsDir() {
   mkdirSync(DEFAULT_JOBS_DIR, { recursive: true });
 }
 
-function cmdTask(args) {
+async function cmdTask(args) {
   const asJson = !!args.flags.json;
   const background = !!args.flags.background;
   const write = !!args.flags.write;
@@ -118,7 +118,7 @@ function cmdTask(args) {
   // Foreground
   createJob(DEFAULT_JOBS_DIR, { id, prompt, write, logFile });
   updateJob(DEFAULT_JOBS_DIR, id, { status: 'running', pid: process.pid });
-  const { code, stdout, stderr } = runClaudeForeground({
+  const { code, stdout, stderr } = await runClaudeForeground({
     claudeBin: CLAUDE_BIN,
     settingsPath: DEFAULT_SETTINGS_PATH,
     prompt,
@@ -172,7 +172,7 @@ function cmdResult(args) {
   process.stdout.write(output);
 }
 
-function cmdReview(args) {
+async function cmdReview(args) {
   const asJson = !!args.flags.json;
   const background = !!args.flags.background;
   const explicitBase = args.flags.base;
@@ -243,7 +243,7 @@ function cmdReview(args) {
   }
 
   updateJob(DEFAULT_JOBS_DIR, id, { status: 'running', pid: process.pid });
-  const { code, stdout, stderr } = runClaudeForeground({
+  const { code, stdout, stderr } = await runClaudeForeground({
     claudeBin: CLAUDE_BIN,
     settingsPath: DEFAULT_SETTINGS_PATH,
     prompt,
@@ -297,13 +297,13 @@ Environment:
 `);
 }
 
-function main() {
+async function main() {
   const args = parseArgs(process.argv.slice(2));
   const cmd = args._[0];
   switch (cmd) {
     case 'setup':   return cmdSetup(args);
-    case 'task':    return cmdTask(args);
-    case 'review':  return cmdReview(args);
+    case 'task':    return await cmdTask(args);
+    case 'review':  return await cmdReview(args);
     case 'status':  return cmdStatus(args);
     case 'result':  return cmdResult(args);
     case 'cancel':  return cmdCancel(args);
@@ -316,4 +316,7 @@ function main() {
   }
 }
 
-main();
+main().catch((err) => {
+  process.stderr.write(`${err?.stack ?? err}\n`);
+  process.exit(1);
+});

@@ -40,9 +40,9 @@ test('buildClaudeArgs includes --dangerously-skip-permissions, --settings, -p, a
   assert.equal(args[args.indexOf('-p') + 1], 'hello world');
 });
 
-test('runClaudeForeground returns stdout and zero exit when bin succeeds', () => {
+test('runClaudeForeground returns stdout and zero exit when bin succeeds', async () => {
   const bin = writeMockClaude("printf 'pong'");
-  const result = runClaudeForeground({
+  const result = await runClaudeForeground({
     claudeBin: bin,
     settingsPath: '/dev/null',
     prompt: 'ping',
@@ -51,9 +51,9 @@ test('runClaudeForeground returns stdout and zero exit when bin succeeds', () =>
   assert.equal(result.stdout, 'pong');
 });
 
-test('runClaudeForeground propagates non-zero exit and stderr', () => {
+test('runClaudeForeground propagates non-zero exit and stderr', async () => {
   const bin = writeMockClaude("echo 'kaboom' >&2; exit 42");
-  const result = runClaudeForeground({
+  const result = await runClaudeForeground({
     claudeBin: bin,
     settingsPath: '/dev/null',
     prompt: 'fail',
@@ -62,10 +62,10 @@ test('runClaudeForeground propagates non-zero exit and stderr', () => {
   assert.ok(result.stderr.includes('kaboom'));
 });
 
-test('runClaudeForeground passes the prompt to the binary', () => {
+test('runClaudeForeground passes the prompt to the binary', async () => {
   // Mock echoes the last argument (which is the prompt for `-p <prompt>`).
   const bin = writeMockClaude('printf %s "${@: -1}"');
-  const result = runClaudeForeground({
+  const result = await runClaudeForeground({
     claudeBin: bin,
     settingsPath: '/dev/null',
     prompt: 'this-exact-prompt-7e2f',

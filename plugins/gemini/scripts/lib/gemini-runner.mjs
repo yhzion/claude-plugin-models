@@ -8,19 +8,79 @@ export function buildGeminiArgs({ prompt, model, outputFormat }) {
   return args;
 }
 
-export function runGeminiForeground({ geminiBin = 'gemini', prompt, model, outputFormat, env, timeoutMs = 0 }) {
-  const args = buildGeminiArgs({ prompt, model, outputFormat });
-  const result = spawnSync(geminiBin, args, {
-    encoding: 'utf8',
-    env: env ?? process.env,
-    timeout: timeoutMs || undefined,
-  });
-  return {
-    code: result.status ?? 1,
-    stdout: result.stdout ?? '',
-    stderr: result.stderr ?? '',
-    signal: result.signal ?? null,
+/**
+ * Kill a child by its process group, escalating SIGTERM -> SIGKILL.
+ *
+ * Async (non-blocking) variant of cancelGeminiProcess, for the foreground
+ * timeout path. gemini ignores SIGTERM, so we target the whole group (`-pid`,
+ * requires the child to be spawned `detached`) and force SIGKILL after a grace
+ * period if it is still alive.
+ */
+function killProcessGroup(pid, { graceMs = 2000 } = {}) {
+  if (!pid) return;
+  const send = (sig) => {
+    try { process.kill(-pid, sig); }
+    catch { try { process.kill(pid, sig); } catch { /* already gone */ } }
   };
+  send('SIGTERM');
+  setTimeout(() => {
+    try { process.kill(pid, 0); send('SIGKILL'); } // still alive -> escalate
+    catch { /* already dead */ }
+  }, graceMs).unref();
+}
+
+/**
+ * Run a foreground gemini delegation and resolve with { code, stdout, stderr, signal }.
+ *
+ * Async (Promise-returning) on purpose: a synchronous spawnSync left stdin open
+ * (gemini could block forever on EOF) and could not be timed out against a
+ * SIGTERM-ignoring child. This version ignores stdin, observes the child via
+ * events, and enforces a real timeout (exit code 124).
+ */
+export function runGeminiForeground({ geminiBin = 'gemini', prompt, model, outputFormat, env, timeoutMs = 900000 }) {
+  const args = buildGeminiArgs({ prompt, model, outputFormat });
+  return new Promise((resolve) => {
+    let child;
+    try {
+      child = spawn(geminiBin, args, {
+        env: env ?? process.env,
+        detached: true,                     // own process group for group-kill
+        stdio: ['ignore', 'pipe', 'pipe'],  // ignore stdin -> no EOF hang
+      });
+    } catch (err) {
+      resolve({ code: 1, stdout: '', stderr: String(err?.message ?? err), signal: null });
+      return;
+    }
+
+    let stdout = '';
+    let stderr = '';
+    let timedOut = false;
+    let settled = false;
+    let timer;
+    const done = (r) => { if (!settled) { settled = true; clearTimeout(timer); resolve(r); } };
+
+    child.stdout?.setEncoding('utf8');
+    child.stderr?.setEncoding('utf8');
+    child.stdout?.on('data', (d) => { stdout += d; });
+    child.stderr?.on('data', (d) => { stderr += d; });
+
+    timer = setTimeout(() => {
+      timedOut = true;
+      killProcessGroup(child.pid);
+    }, timeoutMs);
+
+    child.on('error', (err) => {
+      done({ code: 1, stdout, stderr: stderr || String(err?.message ?? err), signal: null });
+    });
+    child.on('close', (code, signal) => {
+      done({
+        code: timedOut ? 124 : (code ?? 1),
+        stdout,
+        stderr: timedOut ? `${stderr}${stderr ? '\n' : ''}[timeout after ${timeoutMs}ms]` : stderr,
+        signal: signal ?? null,
+      });
+    });
+  });
 }
 
 export function spawnGeminiBackground({ geminiBin = 'gemini', prompt, model, outputFormat, logFile, env }) {
