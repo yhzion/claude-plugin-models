@@ -3,6 +3,7 @@ import { existsSync, readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { spawn } from 'node:child_process';
 
 import {
   createJob,
@@ -13,7 +14,7 @@ import {
 } from './lib/state.mjs';
 import {
   runClaudeForeground,
-  spawnClaudeBackground,
+  cancelClaudeProcess,
 } from './lib/claude-runner.mjs';
 import {
   hasGitRepo,
@@ -29,6 +30,54 @@ const PLUGIN_ROOT = resolve(HERE, '..');
 const DEFAULT_SETTINGS_PATH = process.env.GLM_SETTINGS_PATH ?? join(homedir(), '.claude/settings.glm.json');
 const DEFAULT_JOBS_DIR = process.env.GLM_JOBS_DIR ?? join(homedir(), '.claude/glm-jobs/default');
 const CLAUDE_BIN = process.env.GLM_CLAUDE_BIN ?? 'claude';
+
+const SELF = fileURLToPath(import.meta.url);
+
+// Re-exec this companion as a detached background worker. The worker owns the
+// job lifecycle (running -> completed/failed), which is what keeps the status
+// record from going stale: a plain fire-and-forget of the CLI had no one left
+// to write the terminal status.
+function spawnTaskWorker(id) {
+  const child = spawn(process.execPath, [SELF, 'task-worker', '--id', id], {
+    detached: true,
+    stdio: 'ignore',
+    env: process.env,
+  });
+  child.unref();
+  return { pid: child.pid };
+}
+
+function isPidAlive(pid) {
+  if (!pid) return false;
+  try { process.kill(pid, 0); return true; }
+  catch (e) { return e.code === 'EPERM'; } // exists but not ours
+}
+
+// Self-healing read: a job stuck at 'running' whose worker pid is gone never got
+// finalized (worker crashed or was killed). Reconcile it to 'failed' so callers
+// never block forever polling a stale 'running'. pid===null means the worker has
+// not recorded itself yet — leave it alone to avoid false-failing a fresh job.
+function reconcileJob(job) {
+  if (!job || job.status !== 'running' || !job.pid) return job;
+  if (isPidAlive(job.pid)) return job;
+  const fresh = readJob(DEFAULT_JOBS_DIR, job.id);
+  if (fresh && fresh.status !== 'running') return fresh;
+  return updateJob(DEFAULT_JOBS_DIR, job.id, {
+    status: 'failed',
+    errorMessage: 'process exited without recording completion (status reconciled)',
+  });
+}
+
+// Write the terminal status, unless cancel (or a prior finalize) already set a
+// terminal status — never clobber a cancellation.
+function finalizeJob(id, { code, stderr }) {
+  const cur = readJob(DEFAULT_JOBS_DIR, id);
+  if (cur && ['completed', 'failed', 'cancelled'].includes(cur.status)) return;
+  updateJob(DEFAULT_JOBS_DIR, id, {
+    status: code === 0 ? 'completed' : 'failed',
+    errorMessage: code === 0 ? null : (stderr || `exit ${code}`),
+  });
+}
 
 function parseArgs(argv) {
   const args = { _: [], flags: {} };
@@ -104,12 +153,7 @@ async function cmdTask(args) {
 
   if (background) {
     const job = createJob(DEFAULT_JOBS_DIR, { id, prompt, write, logFile });
-    const { pid } = spawnClaudeBackground({
-      claudeBin: CLAUDE_BIN,
-      settingsPath: DEFAULT_SETTINGS_PATH,
-      prompt,
-      logFile,
-    });
+    const { pid } = spawnTaskWorker(id);
     updateJob(DEFAULT_JOBS_DIR, id, { pid, status: 'running' });
     if (asJson) return emit({ id: job.id, status: 'running', pid, logFile }, true);
     return emit(`${job.id} (background, pid=${pid})\n`, false);
@@ -139,16 +183,37 @@ async function cmdTask(args) {
   }
 }
 
+// Detached background worker: owns one job's lifecycle. Runs the same
+// foreground delegation but streams the result to the job's logFile and writes
+// the terminal status itself. detached:false keeps the nested claude in this
+// worker's process group so cancel can group-kill the whole tree.
+async function cmdTaskWorker(args) {
+  const id = args.flags.id;
+  if (!id) process.exit(2);
+  const job = readJob(DEFAULT_JOBS_DIR, id);
+  if (!job) process.exit(1);
+  updateJob(DEFAULT_JOBS_DIR, id, { status: 'running', pid: process.pid });
+  const { code, stdout, stderr } = await runClaudeForeground({
+    claudeBin: CLAUDE_BIN,
+    settingsPath: DEFAULT_SETTINGS_PATH,
+    prompt: job.prompt,
+    detached: false,
+  });
+  writeFileSync(job.logFile, stdout + (stderr ? `\n[stderr]\n${stderr}` : ''), 'utf8');
+  finalizeJob(id, { code, stderr });
+}
+
 function cmdStatus(args) {
   const asJson = !!args.flags.json;
   const jobId = args._[1];
   if (jobId) {
-    const job = readJob(DEFAULT_JOBS_DIR, jobId);
+    let job = readJob(DEFAULT_JOBS_DIR, jobId);
     if (!job) return fail({ ok: false, error: `unknown job: ${jobId}` }, asJson);
+    job = reconcileJob(job);
     if (asJson) return emit({ ok: true, job }, true);
     return emit(formatJobLine(job) + '\n', false);
   }
-  const jobs = listJobs(DEFAULT_JOBS_DIR);
+  const jobs = listJobs(DEFAULT_JOBS_DIR).map(reconcileJob);
   if (asJson) return emit({ jobs }, true);
   if (jobs.length === 0) return emit('No jobs.\n', false);
   emit(jobs.map(formatJobLine).join('\n') + '\n', false);
@@ -162,8 +227,9 @@ function cmdResult(args) {
   const asJson = !!args.flags.json;
   const id = args._[1];
   if (!id) return fail({ ok: false, error: 'result: job id is required' }, asJson);
-  const job = readJob(DEFAULT_JOBS_DIR, id);
+  let job = readJob(DEFAULT_JOBS_DIR, id);
   if (!job) return fail({ ok: false, error: `unknown job: ${id}` }, asJson);
+  job = reconcileJob(job);
   let output = '';
   if (job.logFile && existsSync(job.logFile)) {
     output = readFileSync(job.logFile, 'utf8');
@@ -236,7 +302,7 @@ async function cmdReview(args) {
   createJob(DEFAULT_JOBS_DIR, { id, prompt, jobClass: 'review', kind: 'review', logFile });
 
   if (background) {
-    const { pid } = spawnClaudeBackground({ claudeBin: CLAUDE_BIN, settingsPath: DEFAULT_SETTINGS_PATH, prompt, logFile });
+    const { pid } = spawnTaskWorker(id);
     updateJob(DEFAULT_JOBS_DIR, id, { pid, status: 'running' });
     if (asJson) return emit({ ok: true, id, status: 'running', pid, logFile, scope, baseRef }, true);
     return emit(`${id} (review, background, pid=${pid}, scope=${scope})\n`, false);
@@ -271,12 +337,14 @@ function cmdCancel(args) {
   if (!id) return fail({ ok: false, error: 'cancel: job id is required' }, asJson);
   const job = readJob(DEFAULT_JOBS_DIR, id);
   if (!job) return fail({ ok: false, error: `unknown job: ${id}` }, asJson);
+  let cancelInfo = { signalSent: null, escalated: false, alive: false };
   if (job.pid && job.status === 'running') {
-    try { process.kill(job.pid, 'SIGTERM'); } catch { /* already gone */ }
+    cancelInfo = cancelClaudeProcess(job.pid);
   }
   const updated = updateJob(DEFAULT_JOBS_DIR, id, { status: 'cancelled' });
-  if (asJson) return emit({ ok: true, job: updated }, true);
-  emit(`cancelled ${id}\n`, false);
+  if (asJson) return emit({ ok: true, job: updated, cancel: cancelInfo }, true);
+  const tag = cancelInfo.escalated ? 'SIGKILL' : (cancelInfo.signalSent ?? 'no-op');
+  emit(`cancelled ${id} (${tag})\n`, false);
 }
 
 function cmdHelp() {
@@ -303,6 +371,7 @@ async function main() {
   switch (cmd) {
     case 'setup':   return cmdSetup(args);
     case 'task':    return await cmdTask(args);
+    case 'task-worker': return await cmdTaskWorker(args);
     case 'review':  return await cmdReview(args);
     case 'status':  return cmdStatus(args);
     case 'result':  return cmdResult(args);

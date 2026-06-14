@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { openSync, closeSync } from 'node:fs';
 
 export function buildClaudeArgs({ settingsPath, prompt }) {
@@ -37,14 +37,17 @@ function killProcessGroup(pid, { graceMs = 2000 } = {}) {
  * against a SIGTERM-ignoring child. This version ignores stdin, observes the
  * child via events, and enforces a real timeout (exit code 124).
  */
-export function runClaudeForeground({ claudeBin = 'claude', settingsPath, prompt, env, timeoutMs = 900000 }) {
+export function runClaudeForeground({ claudeBin = 'claude', settingsPath, prompt, env, timeoutMs = 900000, detached = true }) {
   const args = buildClaudeArgs({ settingsPath, prompt });
   return new Promise((resolve) => {
     let child;
     try {
       child = spawn(claudeBin, args, {
         env: env ?? process.env,
-        detached: true,                     // own process group for group-kill
+        // detached: own process group for group-kill. The background task-worker
+        // passes detached:false so the child joins the worker's group, letting a
+        // single group-kill of the worker pid take the child down on cancel.
+        detached,
         stdio: ['ignore', 'pipe', 'pipe'],  // ignore stdin -> no EOF hang
       });
     } catch (err) {
@@ -96,4 +99,44 @@ export function spawnClaudeBackground({ claudeBin = 'claude', settingsPath, prom
   closeSync(out);
   closeSync(err);
   return { pid: child.pid };
+}
+
+/**
+ * Cancel a backgrounded GLM job by its worker pid.
+ *
+ * The background task-worker is a process-group leader and the nested `claude`
+ * runs in that same group (spawned detached:false), so targeting the group via
+ * `-pid` and escalating SIGTERM -> SIGKILL takes the whole tree down. `claude`
+ * ignores SIGTERM, hence the escalation.
+ *
+ * Returns { signalSent, escalated, alive } describing what happened.
+ */
+export function cancelClaudeProcess(pid, { graceMs = 2000 } = {}) {
+  if (!pid) return { signalSent: null, escalated: false, alive: false };
+
+  const result = { signalSent: 'SIGTERM', escalated: false, alive: true };
+
+  try { process.kill(-pid, 'SIGTERM'); }
+  catch {
+    try { process.kill(pid, 'SIGTERM'); }
+    catch { return { signalSent: null, escalated: false, alive: false }; }
+  }
+
+  const deadline = Date.now() + graceMs;
+  while (Date.now() < deadline) {
+    try { process.kill(pid, 0); }
+    catch { result.alive = false; return result; }
+    // Small synchronous grace wait without taking a runtime dependency.
+    spawnSync(process.execPath, ['-e', 'setTimeout(()=>{},100)'], { timeout: 200 });
+  }
+
+  result.escalated = true;
+  result.signalSent = 'SIGKILL';
+  try { process.kill(-pid, 'SIGKILL'); }
+  catch {
+    try { process.kill(pid, 'SIGKILL'); } catch { /* gone */ }
+  }
+  try { process.kill(pid, 0); result.alive = true; }
+  catch { result.alive = false; }
+  return result;
 }

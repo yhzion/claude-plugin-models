@@ -44,14 +44,17 @@ function killProcessGroup(pid, { graceMs = 2000 } = {}) {
  * child is observed via events with a real timeout (exit code 124) backed by a
  * SIGTERM -> SIGKILL process-group escalation.
  */
-export function runOpencodeForeground({ opencodeBin = 'opencode', prompt, model, env, timeoutMs = 900000 }) {
+export function runOpencodeForeground({ opencodeBin = 'opencode', prompt, model, env, timeoutMs = 900000, detached = true }) {
   const args = buildOpencodeArgs({ prompt, model });
   return new Promise((resolve) => {
     let child;
     try {
       child = spawn(opencodeBin, args, {
         env: env ?? process.env,
-        detached: true,                     // own process group for group-kill
+        // detached: own process group for group-kill. The background task-worker
+        // passes detached:false so the child joins the worker's group, letting a
+        // single group-kill of the worker pid take the child down on cancel.
+        detached,
         stdio: ['ignore', 'pipe', 'pipe'],  // ignore stdin -> no EOF hang
       });
     } catch (err) {

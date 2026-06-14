@@ -37,14 +37,17 @@ function killProcessGroup(pid, { graceMs = 2000 } = {}) {
  * SIGTERM-ignoring child. This version ignores stdin, observes the child via
  * events, and enforces a real timeout (exit code 124).
  */
-export function runGeminiForeground({ geminiBin = 'gemini', prompt, model, outputFormat, env, timeoutMs = 900000 }) {
+export function runGeminiForeground({ geminiBin = 'gemini', prompt, model, outputFormat, env, timeoutMs = 900000, detached = true }) {
   const args = buildGeminiArgs({ prompt, model, outputFormat });
   return new Promise((resolve) => {
     let child;
     try {
       child = spawn(geminiBin, args, {
         env: env ?? process.env,
-        detached: true,                     // own process group for group-kill
+        // detached: own process group for group-kill. The background task-worker
+        // passes detached:false so the child joins the worker's group, letting a
+        // single group-kill of the worker pid take the child down on cancel.
+        detached,
         stdio: ['ignore', 'pipe', 'pipe'],  // ignore stdin -> no EOF hang
       });
     } catch (err) {
