@@ -1,0 +1,319 @@
+#!/usr/bin/env node
+import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { spawnSync, spawn } from 'node:child_process';
+
+import {
+  createJob,
+  readJob,
+  updateJob,
+  listJobs,
+  generateJobId,
+} from './lib/state.mjs';
+import {
+  runPiForeground,
+  cancelPiProcess,
+} from './lib/pi-runner.mjs';
+
+const DEFAULT_JOBS_DIR = process.env.PI_JOBS_DIR ?? join(homedir(), '.claude/pi-jobs/default');
+const PI_BIN = process.env.PI_BIN ?? 'pi';
+// Default model is intentionally null: omitting --model lets pi use its own
+// default (configured) provider/model. Override per-call with `--model
+// provider/model` or globally with the PI_MODEL env var.
+const DEFAULT_MODEL = process.env.PI_MODEL ?? null;
+
+const SELF = fileURLToPath(import.meta.url);
+
+// Re-exec this companion as a detached background worker. The worker owns the
+// job lifecycle (running -> completed/failed), which is what keeps the status
+// record from going stale: a plain fire-and-forget of the CLI had no one left
+// to write the terminal status.
+function spawnTaskWorker(id) {
+  const child = spawn(process.execPath, [SELF, 'task-worker', '--id', id], {
+    detached: true,
+    stdio: 'ignore',
+    env: process.env,
+  });
+  child.unref();
+  return { pid: child.pid };
+}
+
+function isPidAlive(pid) {
+  if (!pid) return false;
+  try { process.kill(pid, 0); return true; }
+  catch (e) { return e.code === 'EPERM'; } // exists but not ours
+}
+
+// Self-healing read: a job stuck at 'running' whose worker pid is gone never got
+// finalized (worker crashed or was killed). Reconcile it to 'failed' so callers
+// never block forever polling a stale 'running'. pid===null means the worker has
+// not recorded itself yet — leave it alone to avoid false-failing a fresh job.
+function reconcileJob(job) {
+  if (!job || job.status !== 'running' || !job.pid) return job;
+  if (isPidAlive(job.pid)) return job;
+  const fresh = readJob(DEFAULT_JOBS_DIR, job.id);
+  if (fresh && fresh.status !== 'running') return fresh;
+  return updateJob(DEFAULT_JOBS_DIR, job.id, {
+    status: 'failed',
+    errorMessage: 'process exited without recording completion (status reconciled)',
+  });
+}
+
+// Write the terminal status, unless cancel (or a prior finalize) already set a
+// terminal status — never clobber a cancellation.
+function finalizeJob(id, { code, stderr }) {
+  const cur = readJob(DEFAULT_JOBS_DIR, id);
+  if (cur && ['completed', 'failed', 'cancelled'].includes(cur.status)) return;
+  updateJob(DEFAULT_JOBS_DIR, id, {
+    status: code === 0 ? 'completed' : 'failed',
+    errorMessage: code === 0 ? null : (stderr || `exit ${code}`),
+  });
+}
+
+function parseArgs(argv) {
+  const args = { _: [], flags: {} };
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === '--background' || a === '--write' || a === '--json' || a === '--skip-probe') {
+      args.flags[a.slice(2)] = true;
+    } else if (a.startsWith('--') && a.includes('=')) {
+      const [k, v] = a.slice(2).split('=', 2);
+      args.flags[k] = v;
+    } else if (a.startsWith('--')) {
+      args.flags[a.slice(2)] = argv[++i];
+    } else {
+      args._.push(a);
+    }
+  }
+  return args;
+}
+
+function emit(payload, asJson) {
+  if (asJson) process.stdout.write(JSON.stringify(payload));
+  else process.stdout.write(typeof payload === 'string' ? payload : JSON.stringify(payload, null, 2));
+}
+
+function fail(payload, asJson, code = 1) {
+  if (asJson) process.stdout.write(JSON.stringify(payload));
+  else process.stderr.write((payload.error ?? String(payload)) + '\n');
+  process.exit(code);
+}
+
+function probeBin() {
+  const result = spawnSync(PI_BIN, ['--version'], { encoding: 'utf8' });
+  if (result.error || (result.status ?? 1) !== 0) {
+    return { ok: false, error: `pi CLI not found or not executable: ${PI_BIN} (install from https://pi.dev)` };
+  }
+  return { ok: true, version: (result.stdout || '').trim() };
+}
+
+function probeAuth({ timeoutMs = 60000 } = {}) {
+  // Cheapest real call through the actual delegation path: a trivial prompt on
+  // the default model. A non-zero exit usually means no provider credentials are
+  // configured yet.
+  const result = spawnSync(PI_BIN, ['-p', 'Reply with exactly: OK'], {
+    encoding: 'utf8',
+    timeout: timeoutMs,
+  });
+  const code = result.status ?? 1;
+  const stderr = result.stderr ?? '';
+  if (code === 0) return { ok: true };
+  return {
+    ok: false,
+    reason: 'probe-failed',
+    code,
+    error: stderr.trim() || `pi exited ${code}`,
+    hint: 'Set a provider API key (e.g. GEMINI_API_KEY / ANTHROPIC_API_KEY / OPENAI_API_KEY) or run `pi` once to configure a model.',
+  };
+}
+
+function cmdSetup(args) {
+  const asJson = !!args.flags.json;
+  const skipProbe = !!args.flags['skip-probe'];
+
+  const bin = probeBin();
+  if (!bin.ok) return fail(bin, asJson);
+
+  if (skipProbe) {
+    const payload = { ok: true, version: bin.version, probed: false };
+    if (asJson) return emit(payload, true);
+    return emit(`pi CLI present (v${bin.version}). Model probe skipped.\n`, false);
+  }
+
+  const auth = probeAuth();
+  if (!auth.ok) {
+    return fail({ ok: false, version: bin.version, ...auth }, asJson);
+  }
+  const payload = { ok: true, version: bin.version, probed: true };
+  if (asJson) return emit(payload, true);
+  return emit(`pi ready — CLI v${bin.version}, default model reachable.\n`, false);
+}
+
+function ensureJobsDir() {
+  mkdirSync(DEFAULT_JOBS_DIR, { recursive: true });
+}
+
+async function cmdTask(args) {
+  const asJson = !!args.flags.json;
+  const background = !!args.flags.background;
+  const write = !!args.flags.write;
+  const model = args.flags.model ?? DEFAULT_MODEL;
+  const prompt = args._.slice(1).join(' ');
+  if (!prompt) return fail({ ok: false, error: 'task: prompt is required' }, asJson);
+
+  const bin = probeBin();
+  if (!bin.ok) return fail(bin, asJson);
+
+  ensureJobsDir();
+  const id = args.flags.id ?? generateJobId();
+  const logFile = join(DEFAULT_JOBS_DIR, `${id}.log`);
+
+  if (background) {
+    const job = createJob(DEFAULT_JOBS_DIR, { id, prompt, write, logFile });
+    if (model) updateJob(DEFAULT_JOBS_DIR, id, { model }); // persist before worker reads it
+    const { pid } = spawnTaskWorker(id);
+    updateJob(DEFAULT_JOBS_DIR, id, { pid, status: 'running' });
+    if (asJson) return emit({ id: job.id, status: 'running', pid, logFile, model }, true);
+    return emit(`${job.id} (background, pid=${pid}${model ? `, model=${model}` : ''})\n`, false);
+  }
+
+  createJob(DEFAULT_JOBS_DIR, { id, prompt, write, logFile });
+  updateJob(DEFAULT_JOBS_DIR, id, { status: 'running', pid: process.pid });
+  const { code, stdout, stderr } = await runPiForeground({
+    piBin: PI_BIN,
+    prompt,
+    model,
+  });
+  writeFileSync(logFile, stdout + (stderr ? `\n[stderr]\n${stderr}` : ''), 'utf8');
+  const finalStatus = code === 0 ? 'completed' : 'failed';
+  updateJob(DEFAULT_JOBS_DIR, id, {
+    status: finalStatus,
+    errorMessage: code === 0 ? null : (stderr || `exit ${code}`),
+  });
+  if (asJson) {
+    return emit({ id, status: finalStatus, output: stdout, error: code === 0 ? null : stderr, code }, true);
+  }
+  process.stdout.write(stdout);
+  if (code !== 0) {
+    process.stderr.write(stderr);
+    process.exit(code);
+  }
+}
+
+// Detached background worker: owns one job's lifecycle. Runs the same
+// foreground delegation but streams the result to the job's logFile and writes
+// the terminal status itself. detached:false keeps the nested pi in this
+// worker's process group so cancel can group-kill the whole tree.
+async function cmdTaskWorker(args) {
+  const id = args.flags.id;
+  if (!id) process.exit(2);
+  const job = readJob(DEFAULT_JOBS_DIR, id);
+  if (!job) process.exit(1);
+  updateJob(DEFAULT_JOBS_DIR, id, { status: 'running', pid: process.pid });
+  const { code, stdout, stderr } = await runPiForeground({
+    piBin: PI_BIN,
+    prompt: job.prompt,
+    model: job.model ?? null,
+    detached: false,
+  });
+  writeFileSync(job.logFile, stdout + (stderr ? `\n[stderr]\n${stderr}` : ''), 'utf8');
+  finalizeJob(id, { code, stderr });
+}
+
+function cmdStatus(args) {
+  const asJson = !!args.flags.json;
+  const jobId = args._[1];
+  if (jobId) {
+    let job = readJob(DEFAULT_JOBS_DIR, jobId);
+    if (!job) return fail({ ok: false, error: `unknown job: ${jobId}` }, asJson);
+    job = reconcileJob(job);
+    if (asJson) return emit({ ok: true, job }, true);
+    return emit(formatJobLine(job) + '\n', false);
+  }
+  const jobs = listJobs(DEFAULT_JOBS_DIR).map(reconcileJob);
+  if (asJson) return emit({ jobs }, true);
+  if (jobs.length === 0) return emit('No jobs.\n', false);
+  emit(jobs.map(formatJobLine).join('\n') + '\n', false);
+}
+
+function formatJobLine(job) {
+  return `${job.id}  ${job.status.padEnd(10)}  ${job.updatedAt}  ${job.prompt?.slice(0, 60) ?? ''}`;
+}
+
+function cmdResult(args) {
+  const asJson = !!args.flags.json;
+  const id = args._[1];
+  if (!id) return fail({ ok: false, error: 'result: job id is required' }, asJson);
+  let job = readJob(DEFAULT_JOBS_DIR, id);
+  if (!job) return fail({ ok: false, error: `unknown job: ${id}` }, asJson);
+  job = reconcileJob(job);
+  let output = '';
+  if (job.logFile && existsSync(job.logFile)) {
+    output = readFileSync(job.logFile, 'utf8');
+  }
+  if (asJson) return emit({ id, status: job.status, output, error: job.errorMessage }, true);
+  process.stdout.write(output);
+}
+
+function cmdCancel(args) {
+  const asJson = !!args.flags.json;
+  const id = args._[1];
+  if (!id) return fail({ ok: false, error: 'cancel: job id is required' }, asJson);
+  const job = readJob(DEFAULT_JOBS_DIR, id);
+  if (!job) return fail({ ok: false, error: `unknown job: ${id}` }, asJson);
+
+  let cancelInfo = { signalSent: null, escalated: false, alive: false };
+  if (job.pid && job.status === 'running') {
+    cancelInfo = cancelPiProcess(job.pid);
+  }
+  const updated = updateJob(DEFAULT_JOBS_DIR, id, { status: 'cancelled' });
+  if (asJson) return emit({ ok: true, job: updated, cancel: cancelInfo }, true);
+  const tag = cancelInfo.escalated ? 'SIGKILL' : (cancelInfo.signalSent ?? 'no-op');
+  emit(`cancelled ${id} (${tag})\n`, false);
+}
+
+function cmdHelp() {
+  process.stdout.write(`pi-companion — pi coding agent task delegator (default/configured model)
+
+Usage:
+  pi-companion setup [--skip-probe] [--json]
+  pi-companion task [--background] [--write] [--model <provider/model>] [--json] [--id <id>] <prompt>
+  pi-companion status [<id>] [--json]
+  pi-companion result <id> [--json]
+  pi-companion cancel <id> [--json]
+
+Notes:
+  Omit --model to use pi's own default (configured) provider/model.
+
+Environment:
+  PI_JOBS_DIR   override ~/.claude/pi-jobs/default
+  PI_BIN        override 'pi' binary path (testing)
+  PI_MODEL      default model for all tasks (still overridable per-call)
+`);
+}
+
+async function main() {
+  const args = parseArgs(process.argv.slice(2));
+  const cmd = args._[0];
+  switch (cmd) {
+    case 'setup':   return cmdSetup(args);
+    case 'task':    return await cmdTask(args);
+    case 'task-worker': return await cmdTaskWorker(args);
+    case 'status':  return cmdStatus(args);
+    case 'result':  return cmdResult(args);
+    case 'cancel':  return cmdCancel(args);
+    case 'help':
+    case '--help':
+    case undefined: return cmdHelp();
+    default:
+      process.stderr.write(`unknown subcommand: ${cmd}\n`);
+      process.exit(2);
+  }
+}
+
+main().catch((err) => {
+  process.stderr.write(`${err?.stack ?? err}\n`);
+  process.exit(1);
+});

@@ -45,6 +45,15 @@ const COMPANIONS = [
     // opencode is invoked as: opencode --version (probe) | opencode run ... PROMPT
     mock: (out) => `#!/usr/bin/env bash\nif [ "$1" = "--version" ]; then echo "0.0.0-mock"; exit 0; fi\nprintf '%s' "${out}"\n`,
   },
+  {
+    name: 'pi',
+    companion: resolve(repoRoot, 'plugins/pi/scripts/pi-companion.mjs'),
+    binEnv: 'PI_BIN',
+    jobsEnv: 'PI_JOBS_DIR',
+    extraEnv: () => ({}),
+    // pi is invoked as: pi --version (probe) | pi -p [--model m] PROMPT
+    mock: (out) => `#!/usr/bin/env bash\nif [ "$1" = "--version" ]; then echo "0.0.0-mock"; exit 0; fi\nprintf '%s' "${out}"\n`,
+  },
 ];
 
 function writeGlmSettings(tmp) {
