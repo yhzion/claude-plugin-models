@@ -86,4 +86,4 @@ When presenting reviews:
 ## See also
 
 - `[[glm-cli-runtime]]` — the actual contract for calling the companion.
-- `[[glm-5-1-prompting]]` — when the response is bad, this is usually where the fix is.
+- `[[glm-prompting]]` — when the response is bad, this is usually where the fix is.

@@ -25,11 +25,11 @@ If `error` indicates the file is missing:
 
 1. Tell the user what's needed: a z.ai coding-plan API token (`ANTHROPIC_AUTH_TOKEN`).
 2. Use the `AskUserQuestion` tool to ask for the token. Mark the field as sensitive in the question prompt.
-3. Write `~/.claude/settings.glm.json` with this exact content (substituting the token):
+3. Write `~/.claude/settings.glm.json` with this content (substitute the token; set `model` to the current z.ai GLM id — check z.ai for the latest, or copy it from an existing install via `node "${CLAUDE_PLUGIN_ROOT}/scripts/glm-companion.mjs" setup`):
 
    ```json
    {
-     "model": "glm-5.1",
+     "model": "glm-5.2[1m]",
      "env": {
        "ANTHROPIC_AUTH_TOKEN": "<token from user>",
        "ANTHROPIC_BASE_URL": "https://api.z.ai/api/anthropic",

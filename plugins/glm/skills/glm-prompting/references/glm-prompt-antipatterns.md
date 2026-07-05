@@ -1,4 +1,4 @@
-# GLM-5.1 prompt antipatterns
+# GLM prompt antipatterns
 
 Things that consistently degrade output quality. Each entry: what it looks like, why it fails, and what to do instead.
 
@@ -69,7 +69,7 @@ Return a bulleted list. One bullet per issue. Each bullet starts with `[severity
 Oh and one more thing — also check for SQL injection.
 ```
 
-Why it fails: GLM-5.1 tends to follow the *last clear directive* it saw, but if the actual ask is buried in line 47 of a 60-line prompt, it competes with whatever was at the top. The result is partial coverage.
+Why it fails: GLM tends to follow the *last clear directive* it saw, but if the actual ask is buried in line 47 of a 60-line prompt, it competes with whatever was at the top. The result is partial coverage.
 
 ✅ Good: put all instructions in the `## Request` section near the top. Context goes below in `## Context`. If you need to add a constraint mid-prompt, hoist it back up.
 
@@ -162,7 +162,7 @@ Prefer changes that pay off in less than a week of work.
 Return a JSON object describing the issues.
 ```
 
-Why it fails: GLM-5.1 produces *something* JSON-shaped but the keys vary run to run, some fields are missing, sometimes the JSON is wrapped in markdown code fences, sometimes not.
+Why it fails: GLM produces *something* JSON-shaped but the keys vary run to run, some fields are missing, sometimes the JSON is wrapped in markdown code fences, sometimes not.
 
 ✅ Good: For v0.4.0, prefer markdown with a literal template (see `prompt-blocks.md`). If you really need JSON:
 

@@ -1,10 +1,10 @@
-# Prompt blocks — the GLM-5.1 building set
+# Prompt blocks — the GLM building set
 
 Each block below is meant to be *pasted into* a larger prompt assembled from the three-section template (`## Background`, `## Request`, `## Context`). They are not standalone prompts.
 
 ## Persona blocks
 
-GLM-5.1 anchors on the first persona statement it sees. Lead with one.
+GLM anchors on the first persona statement it sees. Lead with one.
 
 ### Concise senior engineer
 
@@ -26,7 +26,7 @@ You are an application security engineer reviewing code changes. You care about:
 
 ## Output format blocks
 
-GLM-5.1 follows literal format templates well. Show, don't describe.
+GLM follows literal format templates well. Show, don't describe.
 
 ### Structured review
 
@@ -100,7 +100,7 @@ If the context does not actually contain the file referenced in the request, do 
 
 ## Depth / coverage hints
 
-GLM-5.1 sometimes returns a single point when you wanted multiple. Force coverage:
+GLM sometimes returns a single point when you wanted multiple. Force coverage:
 
 ```
 Be thorough — produce at least three distinct angles, even if some are smaller in scope.

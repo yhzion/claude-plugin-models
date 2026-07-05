@@ -1,6 +1,6 @@
 ---
 name: glm-cli-runtime
-description: Use when a Claude Code agent (especially the `glm-rescue` agent) needs to invoke the `glm-companion` CLI to delegate work to z.ai's GLM-5.1. Covers subcommand contracts, exit codes, env variable overrides, foreground vs background semantics, and the canonical failure-recovery sequence.
+description: Use when a Claude Code agent (especially the `glm-rescue` agent) needs to invoke the `glm-companion` CLI to delegate work to z.ai's GLM. Covers subcommand contracts, exit codes, env variable overrides, foreground vs background semantics, and the canonical failure-recovery sequence.
 ---
 
 # glm-cli-runtime
@@ -86,4 +86,4 @@ The companion does not (yet) accept stdin in v0.4.0 — that's a follow-up.
 ## See also
 
 - `[[glm-result-handling]]` — how to interpret and present what comes back from a job.
-- `[[glm-5-1-prompting]]` — how to assemble the prompt you hand to `task` or how to extend `prompts/review.md`.
+- `[[glm-prompting]]` — how to assemble the prompt you hand to `task` or how to extend `prompts/review.md`.

@@ -1,10 +1,10 @@
 ---
-description: Delegate a task to GLM-5.1 (foreground or background) and track it as a job.
+description: Delegate a task to GLM (foreground or background) and track it as a job.
 allowed-tools: ["Bash", "Read", "Grep", "Glob"]
 argument-hint: "[--background] [--write] <prompt>"
 ---
 
-You are running the `/glm:rescue` command. Your job is to package the user's request into a self-contained prompt and hand it to the `glm-companion` CLI to delegate to GLM-5.1.
+You are running the `/glm:rescue` command. Your job is to package the user's request into a self-contained prompt and hand it to the `glm-companion` CLI to delegate to GLM.
 
 ## Step 1: Build a self-contained prompt
 
