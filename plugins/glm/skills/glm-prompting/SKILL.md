@@ -1,15 +1,15 @@
 ---
-name: glm-5-1-prompting
-description: Use when assembling a prompt to send to z.ai's GLM-5.1 model — either as the body of a `glm-companion task` call, or when extending review/specialty prompt templates. Covers the prompt block library, GLM-5.1's response biases, recipes for common task shapes (review, refactor, design), and antipatterns that consistently degrade output quality.
+name: glm-prompting
+description: Use when assembling a prompt to send to z.ai's GLM model — either as the body of a `glm-companion task` call, or when extending review/specialty prompt templates. Covers the prompt block library, GLM's response biases, recipes for common task shapes (review, refactor, design), and antipatterns that consistently degrade output quality.
 ---
 
-# glm-5-1-prompting
+# glm-prompting
 
 This skill is for *assembling* the prompt body. The transport (how the prompt reaches GLM) is covered by `[[glm-cli-runtime]]`; interpreting what comes back is `[[glm-result-handling]]`.
 
-## What's different about GLM-5.1
+## What's different about GLM
 
-GLM-5.1 is broadly compatible with Anthropic's prompt conventions (it speaks the Anthropic API over z.ai's endpoint), but in practice you'll get noticeably better output if you treat these as defaults:
+GLM is broadly compatible with Anthropic's prompt conventions (it speaks the Anthropic API over z.ai's endpoint), but in practice you'll get noticeably better output if you treat these as defaults:
 
 1. **Explicit persona helps more than it does with Claude.** Lead with one sentence stating who GLM is for this task ("You are a senior backend engineer reviewing a migration.").
 2. **Checklist-style instructions land cleanly.** Numbered steps and explicit "Do X / Don't do Y" pairs produce more consistent output than free-form guidance.

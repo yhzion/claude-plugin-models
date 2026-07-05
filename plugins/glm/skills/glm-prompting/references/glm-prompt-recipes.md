@@ -1,4 +1,4 @@
-# GLM-5.1 prompt recipes
+# GLM prompt recipes
 
 Composed templates for common task shapes. Copy-paste, fill in `{{...}}`, dispatch via `glm-companion task`.
 

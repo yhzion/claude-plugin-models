@@ -348,7 +348,16 @@ function cmdCancel(args) {
 }
 
 function cmdHelp() {
-  process.stdout.write(`glm-companion — z.ai GLM-5.1 task delegator
+  // Read the active model id from the settings file (single source of truth)
+  // so this banner never goes stale when the model is upgraded.
+  let modelTag = 'GLM';
+  try {
+    const settings = JSON.parse(readFileSync(DEFAULT_SETTINGS_PATH, 'utf8'));
+    if (settings.model) modelTag = settings.model;
+  } catch {
+    // settings missing or invalid — keep the generic label
+  }
+  process.stdout.write(`glm-companion — z.ai ${modelTag} task delegator
 
 Usage:
   glm-companion setup [--json]
