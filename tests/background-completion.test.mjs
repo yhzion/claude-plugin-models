@@ -46,6 +46,17 @@ const COMPANIONS = [
     mock: (out) => `#!/usr/bin/env bash\nif [ "$1" = "--version" ]; then echo "0.0.0-mock"; exit 0; fi\nprintf '%s' "${out}"\n`,
   },
   {
+    name: 'minimax-m3',
+    companion: resolve(repoRoot, 'plugins/minimax-m3/scripts/minimax-m3-companion.mjs'),
+    binEnv: 'MINIMAX_M3_CLAUDE_BIN',
+    jobsEnv: 'MINIMAX_M3_JOBS_DIR',
+    extraEnv: (tmp) => ({
+      MINIMAX_M3_SETTINGS_PATH: writeMinimaxM3Settings(tmp),
+    }),
+    // claude is invoked as: claude --dangerously-skip-permissions --settings X -p PROMPT
+    mock: (out) => `#!/usr/bin/env bash\nprintf '%s' "${out}"\n`,
+  },
+  {
     name: 'pi',
     companion: resolve(repoRoot, 'plugins/pi/scripts/pi-companion.mjs'),
     binEnv: 'PI_BIN',
@@ -63,6 +74,22 @@ function writeGlmSettings(tmp) {
     JSON.stringify({
       model: 'glm-5.1',
       env: { ANTHROPIC_AUTH_TOKEN: 'fake-token', ANTHROPIC_BASE_URL: 'https://api.z.ai/api/anthropic' },
+    }),
+    'utf8',
+  );
+  return p;
+}
+
+function writeMinimaxM3Settings(tmp) {
+  // Note: minimax-m3 setup requires env.ANTHROPIC_BASE_URL but NOT a token
+  // (the token is sourced from ~/.bunker/key.env by the user's wrapper at
+  // run-time, not from this file).
+  const p = join(tmp, 'settings.minimax-m3.json');
+  writeFileSync(
+    p,
+    JSON.stringify({
+      model: 'minimax-m3',
+      env: { ANTHROPIC_BASE_URL: 'https://llm-proxy.datamaker.io' },
     }),
     'utf8',
   );

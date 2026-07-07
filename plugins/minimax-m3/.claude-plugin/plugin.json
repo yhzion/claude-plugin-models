@@ -1,0 +1,11 @@
+{
+  "name": "minimax-m3",
+  "version": "0.1.0",
+  "description": "Delegate tasks to the self-hosted MiniMax-M3 model via the bunker-llm Anthropic-compatible proxy.",
+  "author": {
+    "name": "yhzion",
+    "email": "gplusit@gmail.com"
+  },
+  "homepage": "https://github.com/yhzion/claude-plugin-models",
+  "repository": "https://github.com/yhzion/claude-plugin-models"
+}

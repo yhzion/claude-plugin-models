@@ -5,8 +5,8 @@
     "email": "gplusit@gmail.com"
   },
   "metadata": {
-    "description": "Marketplace for plugins that bring external AI models to Claude Code. Current plugins: GLM (z.ai's GLM-5.1), Gemini (Google's Gemini), opencode (default/last-used model), pi (pi coding agent).",
-    "version": "0.8.0"
+    "description": "Marketplace for plugins that bring external AI models to Claude Code. Current plugins: GLM (z.ai's GLM-5.1), Gemini (Google's Gemini), opencode (default/last-used model), pi (pi coding agent), MiniMax-M3 (self-hosted via bunker-llm).",
+    "version": "0.9.0"
   },
   "plugins": [
     {
@@ -43,6 +43,16 @@
       "name": "pi",
       "source": "./plugins/pi",
       "description": "Delegate tasks to the pi coding agent (using its default/configured model) via the pi -p CLI.",
+      "version": "0.1.0",
+      "author": {
+        "name": "yhzion",
+        "email": "gplusit@gmail.com"
+      }
+    },
+    {
+      "name": "minimax-m3",
+      "source": "./plugins/minimax-m3",
+      "description": "Delegate tasks to the self-hosted MiniMax-M3 model via the bunker-llm Anthropic-compatible proxy.",
       "version": "0.1.0",
       "author": {
         "name": "yhzion",

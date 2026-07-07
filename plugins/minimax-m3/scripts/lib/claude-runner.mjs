@@ -1,9 +1,9 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { openSync, closeSync } from 'node:fs';
 
-// GLM-5.x calls always run at max effort unless overridden. Set GLM_CLAUDE_EFFORT
+// MiniMax-M3 calls always run at max effort unless overridden. Set MINIMAX_M3_CLAUDE_EFFORT
 // to '' (empty) to disable, or to another level (low|medium|high|xhigh|max).
-const DEFAULT_EFFORT = process.env.GLM_CLAUDE_EFFORT ?? 'max';
+const DEFAULT_EFFORT = process.env.MINIMAX_M3_CLAUDE_EFFORT ?? 'max';
 
 export function buildClaudeArgs({ settingsPath, prompt, effort = DEFAULT_EFFORT }) {
   const args = [
@@ -36,7 +36,7 @@ function killProcessGroup(pid, { graceMs = 2000 } = {}) {
 }
 
 /**
- * Run a foreground GLM delegation and resolve with { code, stdout, stderr, signal }.
+ * Run a foreground MiniMax-M3 delegation and resolve with { code, stdout, stderr, signal }.
  *
  * Async (Promise-returning) on purpose: a synchronous spawnSync left stdin open
  * (the nested claude could block forever on EOF) and could not be timed out
@@ -108,7 +108,7 @@ export function spawnClaudeBackground({ claudeBin = 'claude', settingsPath, prom
 }
 
 /**
- * Cancel a backgrounded GLM job by its worker pid.
+ * Cancel a backgrounded MiniMax-M3 job by its worker pid.
  *
  * The background task-worker is a process-group leader and the nested `claude`
  * runs in that same group (spawned detached:false), so targeting the group via

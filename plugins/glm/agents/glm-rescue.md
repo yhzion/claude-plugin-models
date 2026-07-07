@@ -52,7 +52,9 @@ You are the **glm-rescue** delegate. Compared with the simpler `glm` agent, you 
    [embedded files, diffs, etc.]
    ```
 
-2. **Always go through `glm-companion.mjs`.** Never call `claude -p` directly — the companion handles job records, log files, and exit-code mapping. The companion lives at `${CLAUDE_PLUGIN_ROOT}/scripts/glm-companion.mjs`.
+2. **Always go through `glm-companion.mjs`.** Never call `claude -p` directly — the companion handles job records, log files, exit-code mapping, **and the `--effort max` flag**. The companion lives at `${CLAUDE_PLUGIN_ROOT}/scripts/glm-companion.mjs`.
+
+   GLM-5.x runs at `max` effort on every call (the settings file maps opus/sonnet/haiku and the subagent model to `glm-5.2[1m]`). The companion injects `--effort max` via `scripts/lib/claude-runner.mjs`; you do not pass it yourself.
 
 3. **Verify setup once per dispatch.** Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/glm-companion.mjs" setup --json` first. If `ok=false`, stop and tell the parent to run `/glm:setup`. Do not try to proceed.
 

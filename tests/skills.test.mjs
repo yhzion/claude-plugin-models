@@ -32,10 +32,10 @@ function parseFrontmatter(md) {
 const EXPECTED_SKILLS = [
   'glm-cli-runtime',
   'glm-result-handling',
-  'glm-5-1-prompting',
+  'glm-prompting',
 ];
 
-test('all v0.4.0 skills directories exist', () => {
+test('all v0.5.0 skills directories exist', () => {
   for (const name of EXPECTED_SKILLS) {
     const dir = join(skillsDir, name);
     assert.ok(existsSync(dir), `${dir} must exist`);
@@ -56,8 +56,8 @@ for (const name of EXPECTED_SKILLS) {
   });
 }
 
-test('glm-5-1-prompting has the three documented reference files', () => {
-  const refDir = join(skillsDir, 'glm-5-1-prompting/references');
+test('glm-prompting has the three documented reference files', () => {
+  const refDir = join(skillsDir, 'glm-prompting/references');
   assert.ok(existsSync(refDir));
   const expected = ['prompt-blocks.md', 'glm-prompt-recipes.md', 'glm-prompt-antipatterns.md'];
   const actual = readdirSync(refDir);
@@ -66,8 +66,8 @@ test('glm-5-1-prompting has the three documented reference files', () => {
   }
 });
 
-test('glm-5-1-prompting SKILL.md references prompt-blocks / recipes / antipatterns', () => {
-  const md = readFileSync(join(skillsDir, 'glm-5-1-prompting/SKILL.md'), 'utf8');
+test('glm-prompting SKILL.md references prompt-blocks / recipes / antipatterns', () => {
+  const md = readFileSync(join(skillsDir, 'glm-prompting/SKILL.md'), 'utf8');
   assert.ok(md.includes('prompt-blocks.md'));
   assert.ok(md.includes('glm-prompt-recipes.md'));
   assert.ok(md.includes('glm-prompt-antipatterns.md'));
@@ -76,12 +76,12 @@ test('glm-5-1-prompting SKILL.md references prompt-blocks / recipes / antipatter
 test('skill cross-references use [[name]] linking convention', () => {
   // Cross-references between the three skills make them discoverable.
   const cliRuntime = readFileSync(join(skillsDir, 'glm-cli-runtime/SKILL.md'), 'utf8');
-  assert.ok(cliRuntime.includes('[[glm-result-handling]]') || cliRuntime.includes('[[glm-5-1-prompting]]'));
+  assert.ok(cliRuntime.includes('[[glm-result-handling]]') || cliRuntime.includes('[[glm-prompting]]'));
 
   const resultHandling = readFileSync(join(skillsDir, 'glm-result-handling/SKILL.md'), 'utf8');
-  assert.ok(resultHandling.includes('[[glm-cli-runtime]]') || resultHandling.includes('[[glm-5-1-prompting]]'));
+  assert.ok(resultHandling.includes('[[glm-cli-runtime]]') || resultHandling.includes('[[glm-prompting]]'));
 
-  const prompting = readFileSync(join(skillsDir, 'glm-5-1-prompting/SKILL.md'), 'utf8');
+  const prompting = readFileSync(join(skillsDir, 'glm-prompting/SKILL.md'), 'utf8');
   assert.ok(prompting.includes('[[glm-cli-runtime]]') || prompting.includes('[[glm-result-handling]]'));
 });
 

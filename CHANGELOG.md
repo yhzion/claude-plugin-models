@@ -2,6 +2,48 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.0] — 2026-07-07
+
+### Added
+- **`minimax-m3` 플러그인 v0.1.0** — 셀프호스팅된 MiniMax-M3 모델을
+  bunker-llm (Anthropic 호환 프록시) 경유로 Claude Code에 연결.
+  - `plugins/minimax-m3/.claude-plugin/plugin.json` (v0.1.0).
+  - `plugins/minimax-m3/agents/{minimax-m3,minimax-m3-rescue}.md` — 단순
+    위임 + 잡 라이프사이클 두 가지 에이전트.
+  - `plugins/minimax-m3/commands/{setup,rescue,status,result,cancel}.md` —
+    슬래시 커맨드 5종. v0.1.0에서는 `review` 제외 (git-diff 리뷰 워크플로우는
+    후속 버전에서 검토).
+  - `plugins/minimax-m3/scripts/minimax-m3-companion.mjs` — CLI 오케스트레이터.
+    `claude --settings ~/.claude/settings.minimax-m3.json -p` 서브프로세스 호출
+    + 잡 트래킹.
+  - `plugins/minimax-m3/scripts/lib/{state,claude-runner,git}.mjs` — 잡 상태
+    원자적 쓰기 / `detached: true` spawn + process-group cancel / git diff
+    헬퍼 (glm과 동일한 패턴).
+  - `plugins/minimax-m3/skills/{minimax-m3-cli-runtime,minimax-m3-prompting,
+    minimax-m3-result-handling}/SKILL.md` — MiniMax-M3 전용 스킬 3종.
+- `.claude-plugin/marketplace.json`: `minimax-m3` 엔트리 추가, 메타데이터
+  버전 `0.6.0` → `0.7.0`, description에 MiniMax-M3 명시.
+- `tests/minimax-m3-{manifest,marketplace,commands}.test.mjs`,
+  `tests/smoke-minimax-m3.test.mjs` — manifest 검증, marketplace 등록 검증,
+  5개 슬래시 커맨드 + companion `--help` 검증.
+- `CLAUDE.md`: `minimax-m3`를 `Current plugins` 줄에 추가, 인증 모델
+  (`~/.bunker/key.env` 분리)을 Conventions에 명시.
+- `README.md`: 설치/검증 섹션에 `/minimax-m3:*` 슬래시 커맨드 + 인증 요구사항
+  추가. (이전 임시 편집으로 남아있던 `opencode`/`pi` 미출시 슬롯은 "미출시"
+  표기 유지.)
+
+### Authentication notes
+- minimax-m3은 `ANTHROPIC_AUTH_TOKEN`을 settings 파일에 저장하지 **않습니다**.
+  키는 사용자 wrapper/shell이 `BUNKER_KEY` 환경변수 또는 `~/.bunker/key.env`
+  (mode 600)를 통해 주입. `/minimax-m3:setup`은 settings 파일의 URL/routing만
+  검증하고 키 자체는 건드리지 않습니다.
+
+### Removed
+- `tests/opencode-{commands,manifest,marketplace}.test.mjs`,
+  `tests/smoke-opencode.test.mjs` — 이전에 미완성 상태로 남아있던 opencode
+  플러그인 시도 잔재. (opencode 자체의 시장성/요구사항이 정리되지 않아
+  제거.)
+
 ## [0.6.0] — 2026-05-14
 
 ### Added

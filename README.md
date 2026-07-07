@@ -1,30 +1,31 @@
 # claude-plugin-models
 
-Claude Code에서 외부 AI 모델을 사용하게 해주는 플러그인 모음. 현재 수록: **`glm`** (z.ai GLM-5.1 위임), **`gemini`** (Google Gemini 위임). 한국어 자연어로 "glm 에이전트에게 ~~ 시켜줘" / "gemini한테 이거 물어봐"라고 말하면 Claude Code가 해당 모델로 디스패치합니다.
+Claude Code에서 외부 AI 모델을 사용하게 해주는 플러그인 모음. 현재 수록: **`glm`** (z.ai GLM-5.1 위임), **`gemini`** (Google Gemini 위임), **`minimax-m3`** (셀프호스티드 MiniMax-M3 위임, bunker-llm 프록시 경유). 한국어 자연어로 "glm 에이전트에게 ~~ 시켜줘" / "gemini한테 이거 물어봐" / "minimax-m3한테 물어봐"라고 말하면 Claude Code가 해당 모델로 디스패치합니다.
 
-> **상태:** v0.6.0 — GLM은 v0.5.0 surface 그대로(`glm-companion` CLI, 슬래시 커맨드 6종, 잡 트래킹, `/glm:review`, 스킬 3종). Gemini 플러그인 MVP 추가: `gemini-companion` CLI, 슬래시 커맨드 6종, `/gemini:review`, 스킬 3종. **process-group 기반 cancel** (gemini CLI는 SIGTERM 무시).
+> **상태:** v0.7.0 — GLM v0.5.0 surface(`glm-companion` CLI, 슬래시 커맨드 6종, 잡 트래킹, `/glm:review`, 스킬 3종). Gemini MVP (v0.1.0). **minimax-m3 플러그인 추가** (v0.1.0): `minimax-m3-companion` CLI, 슬래시 커맨드 5종(`/minimax-m3:{setup,rescue,status,result,cancel}` — review는 v0.1.0에서 제외), 에이전트 2종(`minimax-m3`, `minimax-m3-rescue`), 스킬 3종. 인증은 settings 파일 외부 `~/.bunker/key.env`에서 분리. **process-group 기반 cancel** (모든 컴패니언 동일).
 
 ## 무엇을 하나
 
-이 저장소는 *마켓플레이스 + N개의 플러그인* 구조로, 각 플러그인이 하나의 외부 모델/서비스를 Claude Code에 연결합니다. 현재 두 개의 플러그인이 들어있으며 (`glm`, `gemini`), 설치하면 동일한 이름의 서브에이전트가 활성화되어 다음과 같은 한국어 트리거에 반응합니다:
+이 저장소는 *마켓플레이스 + N개의 플러그인* 구조로, 각 플러그인이 하나의 외부 모델/서비스를 Claude Code에 연결합니다. 현재 세 개의 플러그인이 들어있으며 (`glm`, `gemini`, `minimax-m3`), 설치하면 동일한 이름의 서브에이전트가 활성화되어 다음과 같은 한국어 트리거에 반응합니다:
 
 - "glm 에이전트에게 이 함수 리뷰 시켜줘"
 - "gemini한테 이 로직 어떻게 생각하는지 물어봐"
-- "glm으로 이 유틸 함수 짜줘"
-- "gemini에게 작성 시켜줘"
+- "minimax-m3한테 이거 검토해줘"
+- "셀프호스티드 모델한테 물어봐"
 
 내부적으로는 부모 Claude Code 세션이 자식 프로세스를 띄워 모델을 호출합니다:
 
 - **GLM:** `claude --settings ~/.claude/settings.glm.json -p "<프롬프트>"` (z.ai의 Anthropic 호환 엔드포인트)
 - **Gemini:** `gemini -p "<프롬프트>"` (Google `gemini` CLI; OAuth 또는 `GEMINI_API_KEY`로 인증)
+- **minimax-m3:** `claude --settings ~/.claude/settings.minimax-m3.json -p "<프롬프트>"` (bunker-llm 엔드포인트, MiniMax-M3 고정, `--effort max`). 인증 토큰은 `BUNKER_KEY` 환경변수 또는 `~/.bunker/key.env` (mode 600)에서 별도 로드.
 
 ## 주요 기능
 
 플러그인 간 인터페이스는 거의 동일합니다 — 차이는 모델 / 인증 방식에 한정.
 
 - **자연어 디스패치** — "glm 에이전트에게 ~~ 시켜줘" / "gemini한테 ~~ 물어봐" 같은 한국어 트리거로 자동 위임
-- **슬래시 커맨드 6종 × 2 플러그인** — 각각 `{setup, rescue, review, status, result, cancel}` (`/glm:*`, `/gemini:*`)
-- **잡 트래킹** — 모든 위임이 `~/.claude/glm-jobs/` 또는 `~/.claude/gemini-jobs/`에 영구 기록 (상태, PID, 로그, 결과)
+- **슬래시 커맨드** — glm/gemini는 `{setup, rescue, review, status, result, cancel}` 6종, minimax-m3는 review 제외한 5종
+- **잡 트래킹** — 모든 위임이 `~/.claude/<id>-jobs/`에 영구 기록 (상태, PID, 로그, 결과)
 - **Foreground / Background** — 짧은 질의는 동기 응답, 큰 작업은 백그라운드로 ID만 받고 진행
 - **코드 리뷰** — `/glm:review` 또는 `/gemini:review`로 working-tree, 브랜치, 명시 base ref 비교 리뷰 (구조화 출력)
 - **프롬프트 스킬** — 플러그인당 3종(`*-cli-runtime`, `*-result-handling`, `*-prompting`)이 자동 로드되어 일관된 상호작용 보장
@@ -43,22 +44,31 @@ Claude Code에서 외부 AI 모델을 사용하게 해주는 플러그인 모음
 - **`gemini` CLI** — https://github.com/google-gemini/gemini-cli 에서 설치 (`npm install -g @google/gemini-cli` 등)
 - **인증** — `gemini`를 터미널에서 한 번 실행해 OAuth 완료, 또는 `GEMINI_API_KEY` 환경변수 설정
 
+`opencode` / `pi` 플러그인 추가: (현재 미출시 — 슬롯만 예약됨)
+
+`minimax-m3` 플러그인 추가:
+- **bunker-llm 엔드포인트** — 셀프호스팅된 MiniMax-M3 모델의 Anthropic 호환 URL (기본 `https://llm-proxy.datamaker.io`, 환경변수 `BUNKER_URL`로 오버라이드)
+- **bunker 키** — `~/.bunker/key.env` (권한 600)에 보관, 또는 `BUNKER_KEY` 환경변수로 주입
+- 첫 실행 시 `/minimax-m3:setup`이 `~/.claude/settings.minimax-m3.json`을 가리킵니다
+
 ## 설치
 
 ```bash
 # 1) 마켓플레이스 등록 (이 repo 자체가 마켓플레이스)
 claude plugins marketplace add yhzion/claude-plugin-models
 
-# 2) 원하는 플러그인 설치 (둘 다 받아도 됨)
+# 2) 원하는 플러그인 설치 (세 개 전부 받아도 됨)
 claude plugins install glm@claude-plugin-models
 claude plugins install gemini@claude-plugin-models
+claude plugins install minimax-m3@claude-plugin-models
 
 # 3) Claude Code 재시작 (슬래시 커맨드와 에이전트 로드)
 
 # 4) 검증: /help 입력 시 다음이 보여야 정상
 #    - /glm:setup, /glm:rescue, /glm:review, /glm:status, /glm:result, /glm:cancel
 #    - /gemini:setup, /gemini:rescue, /gemini:review, /gemini:status, /gemini:result, /gemini:cancel
-#    - /agents에서 glm, glm-rescue, gemini, gemini-rescue 네 서브에이전트
+#    - /minimax-m3:setup, /minimax-m3:rescue, /minimax-m3:status, /minimax-m3:result, /minimax-m3:cancel
+#    - /agents에서 glm, glm-rescue, gemini, gemini-rescue, minimax-m3, minimax-m3-rescue 서브에이전트
 ```
 
 **로컬 개발/테스트** — GitHub 경로 대신 로컬 클론 경로를 줘도 됩니다:
@@ -66,7 +76,7 @@ claude plugins install gemini@claude-plugin-models
 ```bash
 claude plugins marketplace add /path/to/local/claude-plugin-models
 claude plugins install glm@claude-plugin-models
-claude plugins install gemini@claude-plugin-models
+claude plugins install minimax-m3@claude-plugin-models
 ```
 
 ## Quick Start

@@ -51,6 +51,7 @@ Receive the user's prompt, optionally gather necessary context from the codebase
    ```bash
    claude --dangerously-skip-permissions \
      --settings ~/.claude/settings.glm.json \
+     --effort max \
      -p "<self-contained prompt>"
    ```
 
@@ -58,10 +59,12 @@ Receive the user's prompt, optionally gather necessary context from the codebase
 
    ```bash
    cat <<'PROMPT' | claude --dangerously-skip-permissions \
-       --settings ~/.claude/settings.glm.json -p
+       --settings ~/.claude/settings.glm.json --effort max -p
    <self-contained prompt with embedded context>
    PROMPT
    ```
+
+   Prefer going through `glm-companion.mjs task` — it injects `--effort max` automatically (see `scripts/lib/claude-runner.mjs`).
 
 5. **Return the result** — present GLM's response under a clear header.
 
@@ -83,6 +86,8 @@ Receive the user's prompt, optionally gather necessary context from the codebase
 - **`--dangerously-skip-permissions` is required**: Nested `claude -p` calls block on permission prompts otherwise. This is the established pattern.
 
 - **Settings file path**: Use `~/.claude/settings.glm.json`. This file holds the z.ai API token and model overrides; it is the **single source of truth** for the active model id — do not hardcode a model version anywhere else. If it doesn't exist, stop and report that `/glm:setup` needs to run first (when the setup command exists) or that the user must create the file manually. To see the currently configured model, run `node "${CLAUDE_PLUGIN_ROOT}/scripts/glm-companion.mjs" setup`.
+
+- **Always run GLM at `--effort max`**: The settings file maps every Claude tier (opus/sonnet/haiku) and the subagent model to `glm-5.2[1m]`, and every GLM call must run at `max` effort. The companion injects this automatically; if you call `claude -p` directly, pass `--effort max` explicitly.
 
 - **Keep context tight**: Embed only what GLM needs. Don't dump entire repos. Quote specific files, functions, or diff hunks.
 
