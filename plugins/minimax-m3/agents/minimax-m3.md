@@ -1,35 +1,6 @@
 ---
 name: minimax-m3
-description: |
-  Use this agent when the user wants to delegate a task to the self-hosted MiniMax-M3 model — either for a second opinion, a fresh perspective from a different model, or to offload work to a private/self-hosted inference endpoint. Trigger phrases include "minimax-m3", "m3 모델", "셀프호스티드 모델", "bunker-llm", "MiniMax 모델한테", "m3한테", and Korean patterns like "minimax-m3 에이전트에게 ~~ 시켜줘", "minimax-m3한테 물어봐", "minimax-m3으로 검토해줘", "minimax-m3에게 작성 시켜줘".
-
-  <example>
-  Context: 사용자가 MiniMax-M3에게 코드 리뷰를 위임함
-  user: "minimax-m3 에이전트에게 이 함수 리뷰 시켜줘"
-  assistant: "minimax-m3 에이전트를 호출해 리뷰를 위임하겠습니다."
-  <commentary>
-  사용자가 명시적으로 "minimax-m3 에이전트에게 ~~ 시켜줘" 패턴으로 요청 — minimax-m3 서브에이전트로 디스패치.
-  </commentary>
-  </example>
-
-  <example>
-  Context: 사용자가 MiniMax-M3의 의견을 구함
-  user: "m3한테 이 로직 어떻게 생각하는지 물어봐"
-  assistant: "minimax-m3 에이전트를 통해 MiniMax-M3의 의견을 받아오겠습니다."
-  <commentary>
-  "m3한테 물어봐" 트리거 — second opinion 패턴.
-  </commentary>
-  </example>
-
-  <example>
-  Context: 사용자가 셀프호스티드 모델을 명시
-  user: "셀프호스티드 모델한테 이거 검토 시켜줘"
-  assistant: "minimax-m3 에이전트(MiniMax-M3 셀프호스티드 모델)로 디스패치하겠습니다."
-  <commentary>
-  "셀프호스티드 모델" 키워드 — bunker-llm을 통해 MiniMax-M3으로 라우팅되는 단일 모델이므로 이 에이전트가 자연스러운 선택.
-  </commentary>
-  </example>
-
+description: "Use when the user wants to delegate a task to the self-hosted MiniMax-M3 model (via the bunker-llm proxy) — a second opinion, a fresh perspective, or offloading to a private endpoint. Trigger phrases: \"minimax-m3\", \"m3 모델\", \"m3한테\", \"셀프호스티드 모델\", \"bunker-llm\", \"MiniMax 모델한테 ~ 시켜줘/물어봐/검토해줘\"."
 model: inherit
 color: cyan
 tools: ["Bash", "Read", "Grep", "Glob"]

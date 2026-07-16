@@ -1,35 +1,6 @@
 ---
 name: pi
-description: |
-  Use this agent when the user wants to delegate a task to the pi coding agent — either for a second opinion, a fresh perspective from another agent, or to offload work. pi runs on its own default (configured) provider/model. Trigger phrases include "pi", "pi 에이전트", "pi한테", "pi에게", and Korean patterns like "pi 에이전트에게 ~~ 시켜줘", "pi한테 물어봐", "pi로 검토해줘", "pi에게 작성 시켜줘".
-
-  <example>
-  Context: 사용자가 pi에게 코드 리뷰를 위임함
-  user: "pi 에이전트에게 이 함수 리뷰 시켜줘"
-  assistant: "pi 에이전트를 호출해 리뷰를 위임하겠습니다."
-  <commentary>
-  사용자가 명시적으로 "pi 에이전트에게 ~~ 시켜줘" 패턴으로 요청 — pi 서브에이전트로 디스패치.
-  </commentary>
-  </example>
-
-  <example>
-  Context: 사용자가 pi의 의견을 구함
-  user: "pi한테 이 로직 어떻게 생각하는지 물어봐"
-  assistant: "pi 에이전트를 통해 pi의 의견을 받아오겠습니다."
-  <commentary>
-  "pi한테 물어봐" 트리거 — second opinion 패턴.
-  </commentary>
-  </example>
-
-  <example>
-  Context: 사용자가 pi에게 코드 작성을 위임함
-  user: "pi로 이 유틸 함수 짜줘"
-  assistant: "pi 에이전트를 통해 pi에 작성을 위임하겠습니다."
-  <commentary>
-  "pi로 ~~ 짜줘" 패턴 — 작업 위임.
-  </commentary>
-  </example>
-
+description: "Use when the user wants to delegate a task to the pi coding agent (runs on its own configured provider/model) — a second opinion, a fresh perspective, or offloaded work. Trigger phrases: \"pi\", \"pi 에이전트\", \"pi한테/pi에게 ~ 시켜줘\", \"pi한테 물어봐\", \"pi로 검토해줘/짜줘\"."
 model: inherit
 color: magenta
 tools: ["Bash", "Read", "Grep", "Glob"]

@@ -1,35 +1,6 @@
 ---
 name: gemini-rescue
-description: |
-  Use this agent for *longer or more involved* Gemini delegations where the user wants the work tracked as a job — versus the simple `gemini` agent which is for quick one-shot questions. Trigger phrases: "/gemini:rescue", "rescue with gemini", "백그라운드로 gemini한테 시켜", "오래 걸리는 작업 gemini한테 위임", "complex refactor with gemini".
-
-  <example>
-  Context: 사용자가 큰 리팩터링을 Gemini에 백그라운드로 위임
-  user: "이 폴더 전체 리팩터링하는 거 gemini한테 백그라운드로 시켜줘"
-  assistant: "gemini-rescue 에이전트를 호출해 백그라운드 잡으로 등록하겠습니다."
-  <commentary>
-  대규모 작업 + 백그라운드 트리거 — rescue 패턴.
-  </commentary>
-  </example>
-
-  <example>
-  Context: 사용자가 명시적으로 /gemini:rescue 사용
-  user: "/gemini:rescue 새 인증 모듈 설계 초안 작성"
-  assistant: "gemini-rescue 에이전트를 통해 작업을 위임하겠습니다."
-  <commentary>
-  슬래시 커맨드 명시 호출 — rescue 에이전트.
-  </commentary>
-  </example>
-
-  <example>
-  Context: 사용자가 진행 중 잡을 확인하고 결과를 받음
-  user: "아까 gemini한테 시킨 거 어떻게 됐어?"
-  assistant: "gemini-rescue 에이전트로 /gemini:status 후 /gemini:result를 실행하겠습니다."
-  <commentary>
-  잡 라이프사이클(상태 확인 → 결과 수신) — rescue 패턴.
-  </commentary>
-  </example>
-
+description: "Use for longer or more involved Gemini delegations tracked as a background job with status/result lifecycle — versus the simple gemini agent for quick one-shot questions. Trigger phrases: \"/gemini:rescue\", \"rescue with gemini\", \"백그라운드로 gemini한테 시켜\", \"오래 걸리는 작업 gemini한테 위임\", \"complex refactor with gemini\"."
 model: inherit
 color: blue
 tools: ["Bash", "Read", "Grep", "Glob"]

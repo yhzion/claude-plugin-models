@@ -1,35 +1,6 @@
 ---
 name: minimax-m3-rescue
-description: |
-  Use this agent for *longer or more involved* MiniMax-M3 delegations where the user wants the work tracked as a job — versus the simple `minimax-m3` agent which is for quick one-shot questions. Trigger phrases: "/minimax-m3:rescue", "rescue", "MiniMax-M3에 rescue 시켜", "백그라운드로 minimax-m3한테 시켜", "오래 걸리는 작업 minimax-m3한테 위임", "complex refactor with minimax-m3".
-
-  <example>
-  Context: 사용자가 큰 리팩터링을 MiniMax-M3에 백그라운드로 위임
-  user: "이 폴더 전체 리팩터링하는 거 minimax-m3한테 백그라운드로 시켜줘"
-  assistant: "minimax-m3-rescue 에이전트를 호출해 백그라운드 잡으로 등록하겠습니다."
-  <commentary>
-  대규모 작업 + 백그라운드 트리거 — rescue 패턴.
-  </commentary>
-  </example>
-
-  <example>
-  Context: 사용자가 명시적으로 /minimax-m3:rescue 사용
-  user: "/minimax-m3:rescue 새 인증 모듈 설계 초안 작성"
-  assistant: "minimax-m3-rescue 에이전트를 통해 작업을 위임하겠습니다."
-  <commentary>
-  슬래시 커맨드 명시 호출 — rescue 에이전트.
-  </commentary>
-  </example>
-
-  <example>
-  Context: 사용자가 진행 중 잡을 확인하고 결과를 받음
-  user: "아까 minimax-m3한테 시킨 거 어떻게 됐어?"
-  assistant: "minimax-m3-rescue 에이전트로 /minimax-m3:status 후 /minimax-m3:result를 실행하겠습니다."
-  <commentary>
-  잡 라이프사이클(상태 확인 → 결과 수신) — rescue 패턴.
-  </commentary>
-  </example>
-
+description: "Use for longer or more involved MiniMax-M3 delegations tracked as a background job with status/result lifecycle — versus the simple minimax-m3 agent for quick one-shot questions. Trigger phrases: \"/minimax-m3:rescue\", \"rescue\", \"백그라운드로 minimax-m3한테 시켜\", \"오래 걸리는 작업 minimax-m3한테 위임\", \"complex refactor with minimax-m3\"."
 model: inherit
 color: cyan
 tools: ["Bash", "Read", "Grep", "Glob"]

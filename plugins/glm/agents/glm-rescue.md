@@ -1,35 +1,6 @@
 ---
 name: glm-rescue
-description: |
-  Use this agent for *longer or more involved* GLM delegations where the user wants the work tracked as a job — versus the simple `glm` agent which is for quick one-shot questions. Trigger phrases: "/glm:rescue", "rescue", "GLM에 rescue 시켜", "백그라운드로 glm한테 시켜", "오래 걸리는 작업 glm한테 위임", "complex refactor with glm".
-
-  <example>
-  Context: 사용자가 큰 리팩터링을 GLM에 백그라운드로 위임
-  user: "이 폴더 전체 리팩터링하는 거 glm한테 백그라운드로 시켜줘"
-  assistant: "glm-rescue 에이전트를 호출해 백그라운드 잡으로 등록하겠습니다."
-  <commentary>
-  대규모 작업 + 백그라운드 트리거 — rescue 패턴.
-  </commentary>
-  </example>
-
-  <example>
-  Context: 사용자가 명시적으로 /glm:rescue 사용
-  user: "/glm:rescue 새 인증 모듈 설계 초안 작성"
-  assistant: "glm-rescue 에이전트를 통해 작업을 위임하겠습니다."
-  <commentary>
-  슬래시 커맨드 명시 호출 — rescue 에이전트.
-  </commentary>
-  </example>
-
-  <example>
-  Context: 사용자가 진행 중 잡을 확인하고 결과를 받음
-  user: "아까 glm한테 시킨 거 어떻게 됐어?"
-  assistant: "glm-rescue 에이전트로 /glm:status 후 /glm:result를 실행하겠습니다."
-  <commentary>
-  잡 라이프사이클(상태 확인 → 결과 수신) — rescue 패턴.
-  </commentary>
-  </example>
-
+description: "Use for longer or more involved GLM delegations tracked as a background job with status/result lifecycle — versus the simple glm agent for quick one-shot questions. Trigger phrases: \"/glm:rescue\", \"rescue\", \"GLM에 rescue 시켜\", \"백그라운드로 glm한테 시켜\", \"오래 걸리는 작업 glm한테 위임\", \"complex refactor with glm\"."
 model: inherit
 color: magenta
 tools: ["Bash", "Read", "Grep", "Glob"]

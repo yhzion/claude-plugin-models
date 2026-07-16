@@ -50,11 +50,15 @@ test('glm agent description contains Korean trigger phrases', () => {
   );
 });
 
-test('glm agent has at least one example block', () => {
+test('glm agent description is trimmed to a single line without <example> blocks', () => {
   const raw = readFileSync(agentPath, 'utf8');
   const { frontmatter } = parseFrontmatter(raw);
   const desc = frontmatter.description ?? '';
-  assert.ok(desc.includes('<example>'), 'description should contain <example> blocks for dispatch accuracy');
+  assert.ok(!desc.includes('<example>'), 'description must not embed <example> blocks (trimmed to role+trigger-phrase form)');
+  assert.ok(
+    desc.includes('glm한테') || desc.includes('glm에게'),
+    'description must still include a Korean trigger phrase for natural dispatch'
+  );
 });
 
 test('glm agent declares Bash among its tools (needed for claude -p)', () => {

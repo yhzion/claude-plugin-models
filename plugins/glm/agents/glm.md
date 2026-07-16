@@ -1,35 +1,6 @@
 ---
 name: glm
-description: |
-  Use this agent when the user wants to delegate a task to z.ai's GLM model — either for a second opinion, a fresh perspective from a different model, or to offload work. Trigger phrases include "glm", "glm 에이전트", "glm한테", "glm에게", "z.ai", "ccg" (legacy alias), and Korean patterns like "glm 에이전트에게 ~~ 시켜줘", "glm한테 물어봐", "glm으로 검토해줘", "glm에게 작성 시켜줘".
-
-  <example>
-  Context: 사용자가 GLM에게 코드 리뷰를 위임함
-  user: "glm 에이전트에게 이 함수 리뷰 시켜줘"
-  assistant: "glm 에이전트를 호출해 리뷰를 위임하겠습니다."
-  <commentary>
-  사용자가 명시적으로 "glm 에이전트에게 ~~ 시켜줘" 패턴으로 요청 — glm 서브에이전트로 디스패치.
-  </commentary>
-  </example>
-
-  <example>
-  Context: 사용자가 GLM의 의견을 구함
-  user: "glm한테 이 로직 어떻게 생각하는지 물어봐"
-  assistant: "glm 에이전트를 통해 GLM의 의견을 받아오겠습니다."
-  <commentary>
-  "glm한테 물어봐" 트리거 — second opinion 패턴.
-  </commentary>
-  </example>
-
-  <example>
-  Context: 사용자가 GLM에게 코드 작성을 위임함
-  user: "glm으로 이 유틸 함수 짜줘"
-  assistant: "glm 에이전트를 통해 GLM에 작성을 위임하겠습니다."
-  <commentary>
-  "glm으로 ~~ 짜줘" 패턴 — 작업 위임.
-  </commentary>
-  </example>
-
+description: "Use when the user wants to delegate a task to z.ai's GLM model (model id from settings.glm.json) — a second opinion, a fresh perspective, or offloaded work. Trigger phrases: \"glm\", \"glm 에이전트\", \"glm한테/glm에게 ~ 시켜줘\", \"glm한테 물어봐\", \"glm으로 검토해줘/짜줘\", \"z.ai\", \"ccg\" (legacy alias)."
 model: inherit
 color: magenta
 tools: ["Bash", "Read", "Grep", "Glob"]

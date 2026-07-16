@@ -1,35 +1,6 @@
 ---
 name: opencode
-description: |
-  Use this agent when the user wants to delegate a task to opencode — either for a second opinion, a fresh perspective from another agent, or to offload work. opencode runs on its own default (last-used) model. Trigger phrases include "opencode", "opencode 에이전트", "opencode한테", "opencode에게", and Korean patterns like "opencode 에이전트에게 ~~ 시켜줘", "opencode한테 물어봐", "opencode로 검토해줘", "opencode에게 작성 시켜줘".
-
-  <example>
-  Context: 사용자가 opencode에게 코드 리뷰를 위임함
-  user: "opencode 에이전트에게 이 함수 리뷰 시켜줘"
-  assistant: "opencode 에이전트를 호출해 리뷰를 위임하겠습니다."
-  <commentary>
-  사용자가 명시적으로 "opencode 에이전트에게 ~~ 시켜줘" 패턴으로 요청 — opencode 서브에이전트로 디스패치.
-  </commentary>
-  </example>
-
-  <example>
-  Context: 사용자가 opencode의 의견을 구함
-  user: "opencode한테 이 로직 어떻게 생각하는지 물어봐"
-  assistant: "opencode 에이전트를 통해 opencode의 의견을 받아오겠습니다."
-  <commentary>
-  "opencode한테 물어봐" 트리거 — second opinion 패턴.
-  </commentary>
-  </example>
-
-  <example>
-  Context: 사용자가 opencode에게 코드 작성을 위임함
-  user: "opencode로 이 유틸 함수 짜줘"
-  assistant: "opencode 에이전트를 통해 opencode에 작성을 위임하겠습니다."
-  <commentary>
-  "opencode로 ~~ 짜줘" 패턴 — 작업 위임.
-  </commentary>
-  </example>
-
+description: "Use when the user wants to delegate a task to opencode (runs on its own default/last-used model) — a second opinion, a fresh perspective from another agent, or offloaded work. Trigger phrases: \"opencode\", \"opencode 에이전트\", \"opencode한테/opencode에게 ~ 시켜줘\", \"opencode한테 물어봐\", \"opencode로 검토해줘/짜줘\"."
 model: inherit
 color: cyan
 tools: ["Bash", "Read", "Grep", "Glob"]

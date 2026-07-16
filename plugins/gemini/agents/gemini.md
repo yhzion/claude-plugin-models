@@ -1,35 +1,6 @@
 ---
 name: gemini
-description: |
-  Use this agent when the user wants to delegate a task to Google's Gemini model — either for a second opinion, a fresh perspective from a different model, or to offload work. Trigger phrases include "gemini", "gemini 에이전트", "gemini한테", "gemini에게", "Gemini", "구글 모델", and Korean patterns like "gemini 에이전트에게 ~~ 시켜줘", "gemini한테 물어봐", "gemini로 검토해줘", "gemini에게 작성 시켜줘".
-
-  <example>
-  Context: 사용자가 Gemini에게 함수 리뷰를 위임함
-  user: "gemini한테 이 함수 리뷰 시켜줘"
-  assistant: "gemini 에이전트를 호출해 리뷰를 위임하겠습니다."
-  <commentary>
-  사용자가 명시적으로 "gemini한테 ~~ 시켜줘" 패턴으로 요청 — gemini 서브에이전트로 디스패치.
-  </commentary>
-  </example>
-
-  <example>
-  Context: 사용자가 Gemini의 의견을 구함
-  user: "gemini한테 이 로직 어떻게 생각하는지 물어봐"
-  assistant: "gemini 에이전트를 통해 Gemini의 의견을 받아오겠습니다."
-  <commentary>
-  "gemini한테 물어봐" 트리거 — second opinion 패턴.
-  </commentary>
-  </example>
-
-  <example>
-  Context: 사용자가 Gemini에게 코드 작성을 위임함
-  user: "gemini로 이 유틸 함수 짜줘"
-  assistant: "gemini 에이전트를 통해 Gemini에 작성을 위임하겠습니다."
-  <commentary>
-  "gemini로 ~~ 짜줘" 패턴 — 작업 위임.
-  </commentary>
-  </example>
-
+description: "Use when the user wants to delegate a task to Google's Gemini model — a second opinion, a fresh perspective, or offloaded work. Trigger phrases: \"gemini\", \"gemini 에이전트\", \"gemini한테/gemini에게 ~ 시켜줘\", \"gemini한테 물어봐\", \"gemini로 검토해줘/짜줘\", \"구글 모델\"."
 model: inherit
 color: blue
 tools: ["Bash", "Read", "Grep", "Glob"]
