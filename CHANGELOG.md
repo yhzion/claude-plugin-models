@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.10.0] — 2026-07-16
+
+### Changed
+- **`glm` 플러그인 `0.6.0`** — agent description 트림(role+trigger-phrase
+  단문 형식, `<example>` 블록 제거)과 문서 동기화(설정 파일이 model id의
+  단일 출처임을 명시하는 표현으로 정리)를 반영. `check-stale.mjs` 주석의
+  `GLM-5.1` 고정 표기를 버전 무관 `GLM-5.x` 표기로 수정.
+  `.claude-plugin/marketplace.json`의 `glm` 엔트리 `description`도
+  `"Delegate tasks to z.ai's GLM model (model id from
+  ~/.claude/settings.glm.json) via claude -p subprocess."`로 갱신 —
+  이전에 남아있던 `GLM-5.1` 하드코딩 표기를 제거.
+  - `commands/setup.md`의 설정 파일 예시 템플릿을 `"model": "glm-5.1"`에서
+    `"model": "glm-5.2[1m]"`로 갱신한 수정(커밋 `a6cea2b`, 2026-07-05)은
+    이전에 CHANGELOG 버전 항목 없이 커밋만 되어 있던 상태였습니다. 이번
+    `0.6.0`에서 정식으로 버전에 반영되어 출시됩니다.
+- **`gemini`/`opencode`/`pi`/`minimax-m3` 플러그인 각 `0.2.0`** — 4개
+  플러그인의 agent description을 동일한 role+trigger-phrase 단문
+  형식으로 트림(`<example>`/`<commentary>` 블록 제거, 세션당 컨텍스트
+  절감).
+- `.claude-plugin/marketplace.json`: 5개 플러그인 엔트리의 `version`을
+  각 플러그인의 새 버전과 일치시키고, `metadata.version`을 `0.9.0` →
+  `0.10.0`으로 갱신.
+
+### Notes
+- `agents/glm.md:61`, `agents/glm-rescue.md:28`의 본문 설명 문장에는
+  `glm-5.2[1m]` 하드코딩이 여전히 남아 있어 `check-stale.mjs` 실행 시
+  현재도 exit 1을 반환합니다 — 이번 릴리스 이전부터 알려진 후속 정리
+  항목이며, 이번 릴리스에서 수정하지 않았습니다.
+
 ## [0.7.0] — 2026-07-07
 
 ### Added

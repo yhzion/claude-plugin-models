@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "Marketplace for plugins that bring external AI models to Claude Code. Current plugins: GLM (z.ai; model id from settings.glm.json), Gemini (Google), opencode (default/last-used model), pi (pi coding agent), MiniMax-M3 (self-hosted via bunker-llm).",
-    "version": "0.9.0"
+    "version": "0.10.0"
   },
   "plugins": [
     {
       "name": "glm",
       "source": "./plugins/glm",
-      "description": "Delegate tasks to z.ai's GLM-5.1 model via claude -p subprocess.",
-      "version": "0.5.0",
+      "description": "Delegate tasks to z.ai's GLM model (model id from ~/.claude/settings.glm.json) via claude -p subprocess.",
+      "version": "0.6.0",
       "author": {
         "name": "yhzion",
         "email": "gplusit@gmail.com"
@@ -23,7 +23,7 @@
       "name": "gemini",
       "source": "./plugins/gemini",
       "description": "Delegate tasks to Google's Gemini model via gemini CLI subprocess.",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "author": {
         "name": "yhzion",
         "email": "gplusit@gmail.com"
@@ -33,7 +33,7 @@
       "name": "opencode",
       "source": "./plugins/opencode",
       "description": "Delegate tasks to opencode (using its default/last-used model) via the opencode run CLI.",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "author": {
         "name": "yhzion",
         "email": "gplusit@gmail.com"
@@ -43,7 +43,7 @@
       "name": "pi",
       "source": "./plugins/pi",
       "description": "Delegate tasks to the pi coding agent (using its default/configured model) via the pi -p CLI.",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "author": {
         "name": "yhzion",
         "email": "gplusit@gmail.com"
@@ -53,7 +53,7 @@
       "name": "minimax-m3",
       "source": "./plugins/minimax-m3",
       "description": "Delegate tasks to the self-hosted MiniMax-M3 model via the bunker-llm Anthropic-compatible proxy.",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "author": {
         "name": "yhzion",
         "email": "gplusit@gmail.com"
