@@ -1,6 +1,6 @@
 # claude-plugin-models
 
-Claude Code에서 외부 AI 모델을 사용하게 해주는 플러그인 모음. 현재 수록: **`glm`** (z.ai GLM-5.1 위임), **`gemini`** (Google Gemini 위임), **`minimax-m3`** (셀프호스티드 MiniMax-M3 위임, bunker-llm 프록시 경유). 한국어 자연어로 "glm 에이전트에게 ~~ 시켜줘" / "gemini한테 이거 물어봐" / "minimax-m3한테 물어봐"라고 말하면 Claude Code가 해당 모델로 디스패치합니다.
+Claude Code에서 외부 AI 모델을 사용하게 해주는 플러그인 모음. 현재 수록: **`glm`** (z.ai GLM 위임), **`gemini`** (Google Gemini 위임), **`minimax-m3`** (셀프호스티드 MiniMax-M3 위임, bunker-llm 프록시 경유). 한국어 자연어로 "glm 에이전트에게 ~~ 시켜줘" / "gemini한테 이거 물어봐" / "minimax-m3한테 물어봐"라고 말하면 Claude Code가 해당 모델로 디스패치합니다.
 
 > **상태:** v0.7.0 — GLM v0.5.0 surface(`glm-companion` CLI, 슬래시 커맨드 6종, 잡 트래킹, `/glm:review`, 스킬 3종). Gemini MVP (v0.1.0). **minimax-m3 플러그인 추가** (v0.1.0): `minimax-m3-companion` CLI, 슬래시 커맨드 5종(`/minimax-m3:{setup,rescue,status,result,cancel}` — review는 v0.1.0에서 제외), 에이전트 2종(`minimax-m3`, `minimax-m3-rescue`), 스킬 3종. 인증은 settings 파일 외부 `~/.bunker/key.env`에서 분리. **process-group 기반 cancel** (모든 컴패니언 동일).
 
@@ -95,7 +95,7 @@ claude plugins install minimax-m3@claude-plugin-models
 
 ```json
 {
-  "model": "glm-5.1",
+  "model": "glm-5.2[1m]",
   "env": {
     "ANTHROPIC_AUTH_TOKEN": "<your-z.ai-token>",
     "ANTHROPIC_BASE_URL": "https://api.z.ai/api/anthropic",
@@ -210,7 +210,7 @@ git diff 기반 코드 리뷰. 자동으로 working-tree(더러우면) 또는 `m
 
 ```
 ## GLM Response (job <id>)
-[GLM-5.1의 응답]
+[GLM의 응답]
 ```
 
 ### Gemini는?
