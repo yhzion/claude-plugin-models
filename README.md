@@ -230,7 +230,7 @@ git diff 기반 코드 리뷰. 자동으로 working-tree(더러우면) 또는 `m
 |---|---|
 | `glm-cli-runtime` | 에이전트가 `glm-companion`을 호출해야 할 때 — 서브커맨드 계약, exit code, 환경변수, 실패 복구 시퀀스 |
 | `glm-result-handling` | GLM 응답을 사용자에게 표시해야 할 때 — `## GLM Response` 헤더, verbatim 전달, 빈 응답·잘림·거부 처리 |
-| `glm-5-1-prompting` | GLM에 보낼 프롬프트를 조립할 때 — 블록 라이브러리, 5개 레시피, 10개 안티패턴 |
+| `glm-prompting` | GLM에 보낼 프롬프트를 조립할 때 — 블록 라이브러리, 5개 레시피, 10개 안티패턴 |
 | `gemini-cli-runtime` | 에이전트가 `gemini-companion`을 호출해야 할 때 — exit code 41(unauthenticated) 처리, process-group cancel 규약 |
 | `gemini-result-handling` | Gemini 응답을 표시해야 할 때 — `## Gemini Response` 헤더, stderr 노이즈 제거, JSON 모드 토큰 stats |
 | `gemini-prompting` | Gemini에 보낼 프롬프트를 조립할 때 — 모델 선택(pro-preview vs 2.5-flash), 블록 라이브러리, 레시피, 안티패턴 |
@@ -278,7 +278,7 @@ claude-plugin-models/                           # 마켓플레이스
 │   ├── skills/
 │   │   ├── glm-cli-runtime/SKILL.md            # 컴패니언 CLI 호출 규약
 │   │   ├── glm-result-handling/SKILL.md        # 응답 표시 규칙
-│   │   └── glm-5-1-prompting/                  # GLM 프롬프트 엔지니어링
+│   │   └── glm-prompting/                  # GLM 프롬프트 엔지니어링
 │   │       ├── SKILL.md
 │   │       └── references/{prompt-blocks,glm-prompt-recipes,glm-prompt-antipatterns}.md
 │   └── scripts/
