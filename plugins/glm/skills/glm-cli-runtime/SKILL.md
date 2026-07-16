@@ -81,7 +81,7 @@ When a `task` or `review` call exits non-zero:
 - Pass via shell substitution: `node ... task "$(<\/tmp/prompt.txt)"`.
 - Or use a heredoc-fed wrapper script.
 
-The companion does not (yet) accept stdin in v0.4.0 — that's a follow-up.
+The companion does not accept stdin; pass the prompt as an argument (see the temp-file / heredoc patterns above for large prompts).
 
 ## See also
 

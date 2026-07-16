@@ -2,10 +2,10 @@
 
 ## Project
 
-Claude Code marketplace for plugins that bring external AI models into Claude Code. First plugin: `glm` (delegates tasks to z.ai's GLM-5.1).
+Claude Code marketplace for plugins that bring external AI models into Claude Code. First plugin: `glm` (delegates tasks to z.ai GLM; model id comes from ~/.claude/settings.glm.json).
 
 - **Plugin type:** Local/GitHub marketplace (multi-plugin, one per external model)
-- **Current plugins:** `glm` (z.ai GLM-5.1), `gemini` (Google Gemini), `minimax-m3` (self-hosted MiniMax-M3 via bunker-llm proxy). (`opencode` and `pi` slots reserved in prior planning; not yet shipped.)
+- **Current plugins:** glm (z.ai GLM — model id from ~/.claude/settings.glm.json), gemini (Google Gemini CLI), opencode (default/last-used model), pi (pi coding agent), minimax-m3 (self-hosted via bunker-llm).
 - **Reference plugin:** `~/.claude/plugins/cache/openai-codex/codex/1.0.4/`
 - **Repo / marketplace:** `yhzion/claude-plugin-models` (public); marketplace name `claude-plugin-models`
 - **Target install:** `claude plugins marketplace add yhzion/claude-plugin-models` then `claude plugins install <id>@claude-plugin-models`

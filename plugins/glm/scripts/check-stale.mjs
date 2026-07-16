@@ -15,7 +15,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const PLUGIN_ROOT = resolve(HERE, '..');
 const SELF = fileURLToPath(import.meta.url);
 
-// Match a hardcoded GLM version: "GLM-5.1", "glm-5.1", "GLM 5.1", "GLM_5.1", ...
+// Match a hardcoded GLM version, e.g. "GLM-5.x", "glm-5.x", "GLM 5.x", "GLM_5.x" (any single-digit minor).
 const VERSION_PATTERN = /\bglm[-_ ]?5\.\d\b/i;
 
 const SCAN_EXTS = new Set(['.md', '.json', '.mjs']);
